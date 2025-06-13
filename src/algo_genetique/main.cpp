@@ -38,11 +38,11 @@ int main(int argc, char **argv)
 	Random::randomize();
 
 	// valeurs par defaut
-	int nb_generation     = 100;
+	int nb_generation     = 300;
 	int taille_population = 100;
 	float taux_croisement = 0.8;
-	float taux_mutation   = 0.3;
-	int taille_chromosome = 10;
+	float taux_mutation   = 0.5;
+	int taille_chromosome = 0;
 	char fileDistances[100];
 	std::vector<std::string> instances = {
 		"data/a280.tsp",
@@ -54,6 +54,11 @@ int main(int argc, char **argv)
 
 	for (const auto& instance : instances) {
 		cout << "Instance : " << instance << endl;
+		int taille_chromosome = 0;
+		if (instance == "data/a280.tsp") taille_chromosome = 280;
+		else if (instance == "data/berlin52.tsp") taille_chromosome = 52;
+		else if (instance == "data/eil76.tsp") taille_chromosome = 76;
+		else if (instance == "data/kroA100.tsp") taille_chromosome = 100;
 	
 		// Passer le fichier des distances ou des coordonnées à l'algorithme génétique
 		Ae algo(nb_generation, taille_population, taux_croisement, taux_mutation, taille_chromosome, const_cast<char*>(instance.c_str()));
@@ -66,8 +71,10 @@ int main(int argc, char **argv)
 		cout << "La meilleure solution trouvee est : ";
 		best->afficher();
 		cout << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
+
+		float gap = calculer_gap(best->fitness, solutionsOptimales[instance]);
+		cout << "Gap : " << gap * 100 << "%" << endl;
 	
-		delete best;
 		cout << "----------------------------------------" << endl;
 	}
 	return 0;

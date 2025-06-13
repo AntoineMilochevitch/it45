@@ -45,9 +45,6 @@ chromosome* Ae::optimiser()
 	pop->ordonner();
 
 	best_fitness = pop->individus[pop->ordre[0]]->fitness;
-	//  on affiche les statistiques de la population initiale
-	cout << "Quelques statistiques sur la population initiale" << endl;
-	pop->statiatiques();
 
 	//tant que le nombre de g�n�rations limite n'est pas atteint
 	for(int g=0; g<nbgenerations; g++)
@@ -91,15 +88,9 @@ chromosome* Ae::optimiser()
 		if (pop->individus[pop->ordre[0]]->fitness < best_fitness)
 		{
 			best_fitness = pop->individus[pop->ordre[0]]->fitness;
-			cout << "Amelioration de la meilleure solution a la generation " << g << " : " << best_fitness << endl;
 			amelioration = g;
 		}
 	}
-	//  on affiche les statistiques de la population finale
-	cout << "Quelques statistiques sur la population finale" << endl;
-	pop->statiatiques();
-	//  on affiche la consanginit� de la population finale
-	pop->similitude();
 
 	//retourner le meilleur individu rencontr� pendant la recherche
 	return pop->individus[pop->ordre[0]];
@@ -302,14 +293,6 @@ void Ae::constuction_distance(char* nom_fichier)
         fichier.close();
     }
 
-    // Affichage de la matrice des distances (pour débogage)
-    cout << "Matrice des distances :\n";
-    for (int i = 0; i < taille_chromosome; i++) {
-        for (int j = 0; j < taille_chromosome; j++) {
-            cout << les_distances[i][j] << " ";
-        }
-        cout << "\n";
-    }
-    cout << "---\n";
+    
 }
 
