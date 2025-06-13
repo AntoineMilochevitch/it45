@@ -293,6 +293,18 @@ void Ae::constuction_distance(char* nom_fichier)
         fichier.close();
     }
 
+	for (int i = 0; i < taille_chromosome; i++) {
+        for (int j = 0; j < taille_chromosome; j++) {
+			if (i != j) {
+				if (les_distances[i][j] < 0) {
+					cerr << "Erreur : Distance invalide entre " << i << " et " << j << endl;
+					exit(-1);
+				}
+			}
+            
+        }
+    }
+
     
 }
 

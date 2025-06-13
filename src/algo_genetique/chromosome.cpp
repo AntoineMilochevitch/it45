@@ -87,10 +87,19 @@ void chromosome::ordonner()
 // �valuation d'une solution : fonction qui calcule la fitness d'une solution
 void chromosome::evaluer(int **distance)
 {
-	fitness = 0;
-	for(int i=0;i<taille-1;i++)
-		fitness += distance[genes[i]][genes[i+1]];
-	fitness += distance[genes[0]][genes[taille-1]];
+    fitness = 0;
+    for (int i = 0; i < taille - 1; i++) {
+        if (distance[genes[i]][genes[i + 1]] < 0) {
+            cerr << "Erreur : Distance invalide entre " << genes[i] << " et " << genes[i + 1] << endl;
+            exit(-1);
+        }
+        fitness += distance[genes[i]][genes[i + 1]];
+    }
+    if (distance[genes[0]][genes[taille - 1]] < 0) {
+        cerr << "Erreur : Distance invalide entre " << genes[0] << " et " << genes[taille - 1] << endl;
+        exit(-1);
+    }
+    fitness += distance[genes[0]][genes[taille - 1]];
 }
 
 // copie les genes d'un chromosome. la fitness n'est reprise
@@ -170,12 +179,15 @@ void chromosome::ameliorer_2opt(int **distance) {
     bool amelioration = true;
     while (amelioration) {
         amelioration = false;
-        for (int i = 1; i < taille - 1; i++) {
+        for (int i = 0; i < taille - 1; i++) { // Inclure le premier gène
             for (int j = i + 1; j < taille; j++) {
-                int gain = distance[genes[i - 1]][genes[j]] + distance[genes[i]][genes[(j + 1) % taille]] -
-                           distance[genes[i - 1]][genes[i]] - distance[genes[j]][genes[(j + 1) % taille]];
+                // Calcul du gain si on inverse les gènes entre i+1 et j
+                int gain = distance[genes[i]][genes[j]] + distance[genes[(i + 1) % taille]][genes[(j + 1) % taille]] -
+                           distance[genes[i]][genes[(i + 1) % taille]] - distance[genes[j]][genes[(j + 1) % taille]];
+                
                 if (gain < 0) {
-                    std::reverse(genes + i, genes + j + 1);
+                    // Inverser les gènes entre i+1 et j
+                    std::reverse(genes + (i + 1), genes + (j + 1));
                     amelioration = true;
                 }
             }

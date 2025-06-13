@@ -5,6 +5,7 @@
 #include <chrono>
 #include <map>
 #include <vector>
+#include <fstream>
 #include "ae.h"
 #include "chromosome.h"
 #include "random.h"
@@ -37,8 +38,19 @@ int main(int argc, char **argv)
 	//initialise le g�n�rateur de nombre al�atoire
 	Random::randomize();
 
+	// Ouvrir le fichier pour écrire les résultats
+    std::ofstream outputFile("results/algo_génétique.txt", std::ios::app);
+    if (!outputFile.is_open()) {
+        cerr << "Erreur : Impossible d'ouvrir le fichier algo_génétique.txt" << endl;
+        return 1;
+    }
+
+    // Rediriger cout vers le fichier
+    std::streambuf* coutBuf = std::cout.rdbuf(); // Sauvegarder le buffer d'origine
+    std::cout.rdbuf(outputFile.rdbuf()); 
+
 	// valeurs par defaut
-	int nb_generation     = 300;
+	int nb_generation     = 600;
 	int taille_population = 100;
 	float taux_croisement = 0.8;
 	float taux_mutation   = 0.5;
@@ -67,7 +79,15 @@ int main(int argc, char **argv)
 		chromosome *best = algo.optimiser();
 		auto end = chrono::high_resolution_clock::now();
 		std::chrono::duration<double> elapsed = end - start;
-	
+
+		cout << "params : " << endl;
+		cout << "Nombre de g�n�rations : " << nb_generation << endl;
+		cout << "Taille de la population : " << taille_population << endl;
+		cout << "Taux de croisement : " << taux_croisement << endl;
+		cout << "Taux de mutation : " << taux_mutation << endl;
+		
+		cout << "croisement 2x" << endl;
+		cout << "mutation : 2 gènes consectuif" << endl;
 		cout << "La meilleure solution trouvee est : ";
 		best->afficher();
 		cout << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
