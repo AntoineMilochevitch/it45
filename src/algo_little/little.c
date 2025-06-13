@@ -4,93 +4,37 @@
  #include <string.h>
  #include <time.h>
  #include <limits.h>
+#include "utils.h"
+#include "instances.h"
 
- #define NBR_TOWNS 280
- int nbr_town = 52;
-
-
- /* Distance matrix */
- double dist[NBR_TOWNS][NBR_TOWNS] ;
-
- /* next_town[i] = next town after town i */
- int next_town[NBR_TOWNS] ;
-
- /* no comment */
- int best_solution[NBR_TOWNS] ;
- double best_eval=-1.0 ;
-
- int first_it = 1;
+#define NBR_TOWNS 280
+#define MAX_VILLES 280
+#define min(a,b) ((a) < (b) ? (a) : (b))
 
 
- #define MAX_VILLES 280
- double coord[MAX_VILLES][2];
+int nbr_town;
+double (*dist)[NBR_TOWNS];
+next_town
+int *best_solution;          // Meilleure solution trouvée
+double best_eval = -1.0 ;
+int first_it = 1;
+
+double coord[MAX_VILLES][2];
+Ville *villes;             // Tableau des villes
 
 
-
-int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
-	FILE *fichier = fopen(nomFichier, "r");
-    if (!fichier) {
-		printf("Erreur lors de l'ouverture du fichier %s\n", nomFichier);
-        perror("Erreur lors de l'ouverture du fichier");
-        return 0;
-    }
-
-    char ligne[256];
-	int dimension = 0;
-
-
-    while (fgets(ligne, sizeof(ligne), fichier)) {
-        // Supprimer les espaces au début de la ligne
-        char *trimmed = ligne;
-        while (*trimmed == ' ') trimmed++;
-
-        // Recherche de la dimension
-        if (strncmp(trimmed, "DIMENSION", 9) == 0) {
-            char *ptr = strstr(trimmed, ":");
-            if (ptr) {
-                dimension = atoi(ptr + 1);
-            }
-        }
-
-        // Chercher le début des coordonnées
-        if (strncmp(trimmed, "NODE_COORD_SECTION", 17) == 0) {
-            break;
-        }
-    }
-
-	if (dimension == 0 || dimension > MAX_VILLES) {
-        fprintf(stderr, "Dimension invalide ou trop grande (max: %d)\n", MAX_VILLES);
-        fclose(fichier);
-        return 0;
-    }
-
-
-	nbr_town = dimension;
+double calculer_gap(int z, int z_optimal) {
+    return (double)(z - z_optimal) / z_optimal;
+}
 
 
 
-     int index = 0;
-     int id;
-     double x, y;
-     while (fgets(ligne, sizeof(ligne), fichier) && index < dimension) {
-        if (strncmp(ligne, "EOF", 3) == 0) break;
 
-        if (sscanf(ligne, "%d %lf %lf", &id, &x, &y) == 3) {
-            coord[index][0] = x;
-            coord[index][1] = y;
-            index++;
-        }
-    }
-
-
-     fclose(fichier);
-     return index == dimension;
- }
 
  /**
   * print a matrix
   */
- void print_matrix(double d[nbr_town][nbr_town])
+ void print_matrix(double d[NBR_TOWNS][NBR_TOWNS])
  {
      int i, j ;
      for (i=0; i<nbr_town; i++)
@@ -109,16 +53,16 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
  /**
   * compute distance matrix
   */
- void compute_matrix(double d[nbr_town][nbr_town])
+ void compute_matrix(double d[NBR_TOWNS][NBR_TOWNS])
  {
      for (int i = 0; i < nbr_town; i++) {
          for (int j = 0; j < nbr_town; j++) {
              if (i == j) {
                  d[i][j] = -1;
              } else {
-                 double x = coord[j][0] - coord[i][0];
-                 double y = coord[j][1] - coord[i][1];
-                 d[i][j] = (sqrt(x * x + y * y));
+                 double dx = villes[j].x - villes[i].x;
+                double dy = villes[j].y - villes[i].y;
+                d[i][j] = sqrt(dx * dx + dy * dy);
              }
          }
      }
@@ -165,41 +109,36 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
  /**
   * initial solution
   */
- double initial_solution()
- {
-     /* solution of the nearest neighbour */
-     int i, sol[nbr_town] ;
+double initial_solution()
+{
+    /* solution of the nearest neighbour */
+    int i, sol[NBR_TOWNS] ;
 
-     /* evaluation of the solution */
-     double eval = 0 ;
+    /* evaluation of the solution */
+    double eval = 0 ;
 
-     /* default solution : 1-2-3-...-n */
-     /*for (i=0;i<NBR_TOWNS;i++)
-         sol[i] = i ;
-     */
+    /* Heuristic solution : the nearest neighbour */
+	int visited[NBR_TOWNS] = {0};
+    int current = 0;
+	sol[0] = current;
+	visited[current] = 1;
 
-     /* Heuristic solution : the nearest neighbour */
-     int visited[nbr_town] = {};
-     int current = 0;
-     sol[0] = current;
-     visited[current] = 1;
-
-     for (i = 1; i < nbr_town; i++) {
-         double min_dist = -1;
-         int next = -1;
-         for (int j = 0; j < nbr_town; j++) {
-             if (!visited[j] && dist[current][j] != -1) {
-                 if (min_dist == -1 || dist[current][j] < min_dist) {
-                     min_dist = dist[current][j];
-                     next = j;
-                 }
-             }
-         }
-         if (next == -1) break;
-         sol[i] = next;
-         visited[next] = 1;
-         current = next;
-     }
+	for (i = 1; i < nbr_town; i++) {
+		double min_dist = -1;
+		int next = -1;
+		for (int j = 0; j < nbr_town; j++) {
+    		if (!visited[j] && dist[current][j] != -1) {
+        		if (min_dist == -1 || dist[current][j] < min_dist) {
+            		min_dist = dist[current][j];
+            		next = j;
+        		}
+     		}
+ 		}
+ 		if (next == -1) break;
+ 		sol[i] = next;
+ 		visited[next] = 1;
+ 		current = next;
+	}
 
      eval = evaluation_solution(sol) ;
      printf("Initial solution ") ;
@@ -214,52 +153,77 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
 
 
 
-
  /**
   *  Build final solution
   */
  void build_solution()
  {
-     int i, solution[nbr_town] ;
+    int i, solution[NBR_TOWNS];
+    memset(solution, 0, sizeof(solution));
 
-     int indiceCour = 0;
-     int villeCour = 0;
 
-     while (indiceCour < nbr_town)
-     {
+    int indiceCour = 0;
+    int villeCour = 0;
+	int visited[NBR_TOWNS] = {0};
 
-         solution[indiceCour] = villeCour ;
+	int compteur = 0;
+    int max_iterations = nbr_town * 2;
 
-         /* Test si le cycle est hamiltonien */
-         for (i = 0; i < indiceCour; i++)
-         {
-             if (solution[i] == villeCour)
-             {
-                 /* printf ("cycle non hamiltonien\n") ; */
-                 return;
-             }
-         }
-         /* Recherche de la ville suivante */
-         villeCour = next_town[villeCour] ;
 
-         indiceCour++;
-     }
 
-     double eval = evaluation_solution(solution) ;
+     while (indiceCour < nbr_town && compteur < max_iterations)
+    {
+        // Vérification des indices
+        if (villeCour < 0 || villeCour >= nbr_town)
+        {
+            return;
+        }
 
-     if (best_eval<0 || eval < best_eval)
-     {
-         best_eval = eval ;
-         for (i=0; i<nbr_town; i++)
-             best_solution[i] = solution[i] ;
-         printf ("New best solution: ") ;
-         print_solution (solution, best_eval) ;
-     }
-     return;
+        solution[indiceCour] = villeCour;
+        visited[villeCour] = 1;
+
+        /* Test si le cycle est hamiltonien */
+        for (i = 0; i < indiceCour; i++)
+        {
+            if (solution[i] == villeCour)
+            {
+                return;
+            }
+        }
+
+        /* Recherche de la ville suivante */
+        int prochaine_ville = next_town[villeCour];
+
+        // Vérification de la validité de la prochaine ville
+        if (prochaine_ville < 0 || prochaine_ville >= nbr_town)
+        {
+            return;
+        }
+
+        villeCour = prochaine_ville;
+        indiceCour++;
+        compteur++;  // Protection contre les boucles infinies
+    }
+
+
+     if (indiceCour == nbr_town)
+    {
+        double eval = evaluation_solution(solution);
+
+        if (best_eval < 0 || eval < best_eval)
+        {
+            best_eval = eval;
+            for (i = 0; i < nbr_town; i++)
+                best_solution[i] = solution[i];
+            printf("New best solution: ");
+            print_solution(solution, best_eval);
+        }
+    }
+
  }
 
 
- double reduire_lignes(double mat[nbr_town][nbr_town]) {
+ double reduire_lignes(double mat[NBR_TOWNS][NBR_TOWNS]) {
      double LB = 0;
      for (int i = 0; i < nbr_town; i++) {
          double min = INT_MAX;
@@ -278,7 +242,7 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
      return LB;
  }
 
- double reduire_colonnes(double mat[nbr_town][nbr_town]) {
+ double reduire_colonnes(double mat[NBR_TOWNS][NBR_TOWNS]) {
      double LB = 0;
      for (int j = 0; j < nbr_town; j++) {
          double min = INT_MAX;
@@ -300,80 +264,90 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
  /**
   *  Little Algorithm
   */
- void little_algorithm(double d0[nbr_town][nbr_town], int iteration, double eval_node_parent)
- {
-     if ((NBR_TOWNS == 6 && (first_it == 1 && iteration == 1)) || (NBR_TOWNS == 10 && (iteration == 0))) {
-         printf("Borne minimum a la 1ere iteration : %f\n", eval_node_parent);
-     }
-     if (iteration == nbr_town)
-     {
-         build_solution();
-         return;
-     }
+void little_algorithm(double d0[NBR_TOWNS][NBR_TOWNS], int iteration, double eval_node_parent)
+{
+	if (iteration < 0 || iteration >= NBR_TOWNS) {
+        printf("ERREUR : iteration invalide (%d)\n", iteration);
+        return;
+    }
 
-     /* Do the modification on a copy of the distance matrix */
-     double d[nbr_town][nbr_town] ;
-     memcpy (d, d0, nbr_town*nbr_town*sizeof(double)) ;
+    static int recursion_depth = 0;
+    recursion_depth++;
+    if (recursion_depth > NBR_TOWNS * 2) {
+        printf("ERREUR : Profondeur de récursion excessive (%d)\n", recursion_depth);
+        recursion_depth--;
+        return;
+    }
 
-     int i, j ;
+    if (iteration > nbr_town * 2) {
+        recursion_depth--;
+        return;
+    }
 
-     double eval_node_child = eval_node_parent;
+    /* Do the modification on a copy of the distance matrix */
+    double d[NBR_TOWNS][NBR_TOWNS] ;
+    memcpy (d, d0, NBR_TOWNS*NBR_TOWNS*sizeof(double)) ;
 
-     /* substract the min of the rows and the min of the columns
-      * and update the evaluation of the current node */
-     eval_node_child += reduire_lignes(d);
-     eval_node_child += reduire_colonnes(d);
+    int i, j ;
+
+    double eval_node_child = eval_node_parent;
+
+    /* substract the min of the rows and the min of the columns
+     * and update the evaluation of the current node */
+    eval_node_child += reduire_lignes(d);
+    eval_node_child += reduire_colonnes(d);
 
 
-     /* Cut : stop the exploration of this node */
-     if (best_eval>=0 && eval_node_child >= best_eval)
-         return;
+    /* Cut : stop the exploration of this node */
+    if (best_eval>=0 && eval_node_child >= best_eval)
+        return;
 
 
-     /**
-      *  Compute the penalities to identify the zero with max penalty
-      *  If no zero in the matrix, then return, solution infeasible
-      *  TO COMPLETE
-      *  ...
-      *  ...
-      */
-     /* row and column of the zero with the max penalty */
-     int izero=-1, jzero=-1 ;
-     double pmax = -1;           // max pénalité
+    /**
+     *  Compute the penalities to identify the zero with max penalty
+     *  If no zero in the matrix, then return, solution infeasible
+     *  TO COMPLETE
+     *  ...
+     *  ...
+    */
+    /* row and column of the zero with the max penalty */
+    int izero=-1, jzero=-1 ;
+    double pmax = -1;           // max pénalité
 
-     for (i = 0; i < nbr_town; i++) {
-         for (j = 0; j < nbr_town; j++) {
-             if (d[i][j] == 0) {
-                 double min_lig = INT_MAX, min_col = INT_MAX;
-                 for (int k = 0; k < nbr_town; k++) {
-                     if (k != j && d[i][k] >= 0)
-                         if (d[i][k] < min_lig) min_lig = d[i][k];
-                     if (k != i && d[k][j] >= 0)
-                         if (d[k][j] < min_col) min_col = d[k][j];
-                 }
+    for (i = 0; i < nbr_town; i++) {
+        for (j = 0; j < nbr_town; j++) {
+            if (d[i][j] == 0) {
+                double min_lig = INT_MAX, min_col = INT_MAX;
+                for (int k = 0; k < nbr_town; k++) {
+                    if (k != j && d[i][k] >= 0)
+                        if (d[i][k] < min_lig) min_lig = d[i][k];
+                    if (k != i && d[k][j] >= 0)
+                        if (d[k][j] < min_col) min_col = d[k][j];
+                }
 
-                 double pen;
-                 if (min_lig != INT_MAX && min_col != INT_MAX) {
-                     pen = min_lig+min_col;
-                 }
-                 else {pen = 0;}
+                double pen;
+                if (min_lig != INT_MAX && min_col != INT_MAX) {
+                    pen = min_lig+min_col;
+                }
+                else {pen = 0;}
 
-                 if (pen > pmax) {
-                     pmax = pen;
-                     izero = i;
-                     jzero = j;
-                 }
-             }
-         }
-     }
-     if (first_it == 1) {
-         printf("1er zero ayant la penalite la plus forte : depart = %d  arrivee = %d\n", izero, jzero);
-         first_it = 0;
-     }
+                if (pen > pmax) {
+                    pmax = pen;
+                    izero = i;
+                    jzero = j;
+                }
+            }
+        }
+    }
+    if (first_it == 1) {
+        printf("1er zero ayant la penalite la plus forte : depart = %d  arrivee = %d\n", izero, jzero);
+        first_it = 0;
+    }
 
-     if (izero == -1 || jzero == -1) {
-         return; //solution infeasible
-     }
+    if (izero == -1 || jzero == -1 || izero >= nbr_town || jzero >= nbr_town) {
+        return;
+    }
+
 
      /* Store the row and column of the zero with max penalty in
       *  starting_town and ending_town */
@@ -382,14 +356,9 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
      int ending_town = jzero;
 
      /* Do the modification on a copy of the distance matrix */
-     double d2[nbr_town][nbr_town] ;
-     memcpy (d2, d, nbr_town*nbr_town*sizeof(double)) ;
+     double d2[NBR_TOWNS][NBR_TOWNS] ;
+     memcpy (d2, d, NBR_TOWNS*NBR_TOWNS*sizeof(double)) ;
 
-     /* Modify the matrix d2 according to the choice of the zero with the max penalty */
-     // Choix constructif, on inclut le chemin starting_town -> ending_town
-     for (i = 0; i < nbr_town; i++)
-         for (j = 0; j < nbr_town; j++)
-             d2[i][j] = d[i][j];
      // On suprrime la ligne imax et la colonne jmax
      for (int k = 0; k < nbr_town; k++) {
          d2[starting_town][k] = -1;
@@ -404,73 +373,172 @@ int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
      little_algorithm(d2, iteration + 1, eval_node_child);
 
      /* Do the modification on a copy of the distance matrix */
-     memcpy (d2, d, nbr_town*nbr_town*sizeof(double)) ;
+     memcpy (d2, d, NBR_TOWNS*NBR_TOWNS*sizeof(double)) ;
 
-     /* Modify the dist matrix to explore the other possibility : the non-choice
-      *  of the zero with the max penalty */
-     // Autre choix, on exclut le chemin izero -> jzero
-     for (int i = 0; i < nbr_town; i++)
-         for (int j = 0; j < nbr_town; j++)
-             d2[i][j] = d[i][j];
      d2[starting_town][ending_town] = -1;
 
      /* Explore right child node according to non-choice */
      little_algorithm(d2, iteration, eval_node_child);
 
- }
-
-
+}
 
 
  /**
   *
   */
- int main (void){
-     clock_t start, end;
-     double cpu_time_used;
+int main (void){
+	dist = malloc(NBR_TOWNS * sizeof(*dist));
+    next_town = malloc(NBR_TOWNS * sizeof(int));
+    best_solution = malloc(NBR_TOWNS * sizeof(int));
+    villes = malloc(NBR_TOWNS * sizeof(Ville));
 
-     if (!lireCoordonnees("../../data/berlin52.tsp", coord)) {
-        printf("Erreur lors de la lecture du fichier\n");
+    if (!dist || !next_town || !best_solution || !villes) {
+        printf("Erreur d'allocation mémoire\n");
+        // Libération de la mémoire allouée
+        free(dist);
+        free(next_town);
+        free(best_solution);
+        free(villes);
         return 1;
     }
 
-    compute_matrix(dist);
-    best_eval = -1;
+
+    for (int i = 0; i < NB_INSTANCES; i++) {
+
+		// Initialisation de la matrice de distances
+        for (int i = 0; i < NBR_TOWNS; i++) {
+            for (int j = 0; j < NBR_TOWNS; j++) {
+                dist[i][j] = -1;
+            }
+        }
+
+        printf("\nInstance : %s\n", instances[i]);
+        printf("----------------------------------------\n");
+
+        // Réinitialisation des variables globales
+        best_eval = -1.0;
+        first_it = 1;
+        memset(next_town, 0, NBR_TOWNS * sizeof(int));
+        memset(best_solution, 0, NBR_TOWNS * sizeof(int));
+
+		int nb_villes;
+
+        // Lecture des coordonnées
+        if (!lireCoordonneesFichier(instances[i], villes, NBR_TOWNS, &nb_villes)) {
+            printf("Erreur lors de la lecture du fichier %s\n", instances[i]);
+            continue;
+        }
+
+        nbr_town = nb_villes;
+
+		if (nbr_town > NBR_TOWNS) {
+            printf("Erreur : nombre de villes trop grand (%d > %d)\n", nbr_town, MAX_TOWNS);
+            continue;
+        }
 
 
-     /* Print problem information */
-     printf ("Points coordinates:\n");
-     int i ;
-     for (i=0; i<nbr_town; i++)
-     {
-         printf ("Node %d: x=%f, y=%f\n", i, coord[i][0], coord[i][1]);
-     }
-     printf ("\n");
+        // Calcul de la matrice de distances
+		genererMatriceDistances(villes, nbr_town, dist);
 
-     printf ("\n");
-     printf ("Distance Matrix:\n");
-     print_matrix(dist);
-     printf ("\n");
+        // Solution initiale
+        initial_solution();
+
+        // Exécution de l'algorithme de Little
+        int iteration = 0;
+        double lowerbound = 0.0;
+
+        clock_t start = clock();
+printf("\nVérifications avant little_algorithm :\n");
+printf("nbr_town = %d\n", nbr_town);
+printf("iteration = %d\n", iteration);
+printf("lowerbound = %f\n", lowerbound);
+printf("best_eval = %f\n", best_eval);
+
+// Vérification de la matrice de distances
+int has_invalid_distance = 0;
+int row_with_error = -1;
+int col_with_error = -1;
+for (int i = 0; i < nbr_town && !has_invalid_distance; i++) {
+    for (int j = 0; j < nbr_town; j++) {
+        if (i != j && dist[i][j] < 0) {
+            has_invalid_distance = 1;
+            row_with_error = i;
+            col_with_error = j;
+            break;
+        }
+    }
+}
+
+if (has_invalid_distance) {
+    printf("ERREUR : Distance invalide trouvée à [%d][%d] = %f\n",
+           row_with_error, col_with_error, dist[row_with_error][col_with_error]);
+}
+
+// Vérification des tableaux
+printf("Taille de next_town : %lu\n", sizeof(next_town));
+printf("Taille de best_solution : %lu\n", sizeof(best_solution));
+
+// Vérification que nbr_town ne dépasse pas les limites
+if (nbr_town <= 0 || nbr_town > NBR_TOWNS) {
+    printf("ERREUR : nbr_town invalide (%d)\n", nbr_town);
+    return 1;
+}
+
+// Vérification de la diagonale de la matrice
+int diagonal_error = 0;
+for (int i = 0; i < nbr_town; i++) {
+    if (dist[i][i] != -1) {
+        printf("ERREUR : Diagonale non initialisée à -1 à la position %d\n", i);
+        diagonal_error = 1;
+    }
+}
+
+printf("État de first_it : %d\n", first_it);
+
+// Affichage des premières valeurs de la matrice pour vérification
+printf("Échantillon de la matrice de distances :\n");
+for (int i = 0; i < min(3, nbr_town); i++) {
+    for (int j = 0; j < min(3, nbr_town); j++) {
+        printf("%7.2f ", dist[i][j]);
+    }
+    printf("\n");
+}
+
+printf("\nDémarrage de little_algorithm...\n");
+
+// Si tout est OK, on continue avec l'appel
+if (!has_invalid_distance && !diagonal_error && nbr_town > 0 && nbr_town <= NBR_TOWNS) {
+    little_algorithm(dist, iteration, lowerbound);
+} else {
+    printf("ERREUR : Conditions non remplies pour exécuter little_algorithm\n");
+}
 
 
-     /* initial solution */
-     initial_solution() ;
+        little_algorithm(dist, iteration, lowerbound);
+        clock_t end = clock();
 
-     // Little
-     int iteration = 0 ;
-     double lowerbound = 0.0 ;
+        // Affichage des résultats
+        printf("\nMeilleure solution trouvée :");
+        print_solution(best_solution, best_eval);
 
-     start = clock();
-     little_algorithm(dist, iteration, lowerbound) ;
-     end = clock();
-     printf("Best solution:") ;
-     print_solution (best_solution, best_eval) ;
+        // Calcul et affichage du temps d'exécution
+        double cpu_time_used = ((double)(end - start)) / CLOCKS_PER_SEC;
+        printf("Temps d'exécution : %.2f secondes\n", cpu_time_used);
 
-     cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-     printf("Temps de calcul : %f secondes\n", cpu_time_used);
+        // Calcul et affichage du GAP
+        double gap = calculer_gap(best_eval, solutions_optimales[i]);
+        printf("GAP : %.2f%%\n", gap * 100);
 
-     printf ("Hit RETURN!\n") ;
-     getchar() ;
+        printf("----------------------------------------\n");
+    }
 
-     return 0 ;
- }
+	free(dist);
+    free(next_town);
+    free(best_solution);
+    free(villes);
+
+
+
+	return 0 ;
+
+}

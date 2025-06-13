@@ -7,6 +7,7 @@ BIN_DIR = ../../bin
 
 SOURCES = $(wildcard $(SRC_DIR)/*.c)
 OBJECTS = $(patsubst $(SRC_DIR)/%.c, $(BUILD_DIR)/%.o, $(SOURCES))
+DEPS = $(OBJECTS:.o=.d)
 
 TARGET = $(BIN_DIR)/little
 
@@ -18,9 +19,11 @@ $(TARGET): $(OBJECTS)
 
 $(BUILD_DIR)/%.o: $(SRC_DIR)/%.c
 	@mkdir -p $(BUILD_DIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -MMD -MP -c $< -o $@
+
+-include $(DEPS)
 
 clean:
-	rm -rf $(BUILD_DIR)/*.o $(TARGET)
+	rm -rf $(BUILD_DIR)/*.o $(BUILD_DIR)/*.d $(TARGET)
 
 .PHONY: all clean
