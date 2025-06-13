@@ -135,17 +135,3 @@ void chromosome::echange_2_genes_quelconques()
     // Réordonne le chromosome si nécessaire
     ordonner();
 }
-
-void chromosome::deplacement_1_gene()
-{
-    // Sélectionne un gène aléatoire
-    int geneIndex = Random::aleatoire(taille);
-
-    // Sélectionne une nouvelle position aléatoire différente
-    int newPosition = Random::aleatoire(taille);
-    while (newPosition == geneIndex)
-    {
-        newPosition = Random::aleatoire(taille);
-    }
-
-    // Sauvegarde le
