@@ -147,24 +147,20 @@ void chromosome::deplacement_1_gene()
     {
         newPosition = Random::aleatoire(taille);
     }
-
-	void chromosome::inversion_sequence_genes()
-    {
-    }
-
+}
 	// affichage des param�tre d'un chromosome
-	void chromosome::afficher()
-    {
-    	cout << genes[0];
-    	for(int i=1;i<taille;i++)
-    		cout << "-" << genes[i];
-    	cout << " => fitness = " << fitness << endl;
-    }
+void chromosome::afficher()
+{
+	cout << genes[0];
+    for (int i=1;i<taille;i++)
+    	cout << "-" << genes[i];
+    cout << " => fitness = " << fitness << endl;
+}
 
-	bool chromosome::identique(chromosome* chro)
-    {
-    	for(int i=1; i<taille; i++)
-    		if (chro->genes [i] != this->genes[i])
-    			return false;
-    	return true;
-    }
+bool chromosome::identique(chromosome* chro)
+{
+    for(int i=1; i<taille; i++)
+    	if (chro->genes [i] != this->genes[i])
+    		return false;
+    return true;
+}
