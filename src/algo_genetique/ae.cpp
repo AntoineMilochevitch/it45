@@ -1,4 +1,5 @@
 #include "ae.h"
+#include "utils.h"
 
 using namespace std;
 
@@ -17,7 +18,13 @@ Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_
 // destructeur de l'objet Ae
 Ae::~Ae()
 {
-	delete pop;
+    if (les_distances) {
+        for (int i = 0; i < taille_chromosome; i++) {
+            delete[] les_distances[i];
+        }
+        delete[] les_distances;
+    }
+    delete pop;
 }
 
 // proc�dure principale de la recherche
@@ -60,13 +67,14 @@ chromosome* Ae::optimiser()
 			fils2->copier(pere2);
 		}
 
-		// On effectue la mutation d'un enfant avec une probabilit� "taux_mutation"
-		if(Random::aleatoire(1000)/1000.0 < taux_mutation)
+		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
 			fils1->echange_2_genes_consecutifs();
-
-		// On effectue la mutation de l'autre enfant avec une probabilit� "taux_mutation"
-		if(Random::aleatoire(1000)/1000.0 < taux_mutation)
+			fils1->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
+		}
+		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
 			fils2->echange_2_genes_consecutifs();
+			fils2->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
+		}
 
 		// �valuation des deux nouveaux individus g�n�r�s
 		fils1->evaluer(les_distances);
@@ -246,54 +254,62 @@ void Ae::croisementLOX(chromosome* parent1, chromosome* parent2,
 
 void Ae::constuction_distance(char* nom_fichier)
 {
-	les_distances = new int*[taille_chromosome];
-	for(int i=0; i<taille_chromosome; i++)
-		les_distances[i] = new int[taille_chromosome];
+    // Vérifier si le fichier est un fichier .tsp
+    std::string fichier(nom_fichier);
+    if (fichier.find(".tsp") != std::string::npos) {
+        // Lire les coordonnées des villes
+        std::vector<Ville> villes = lireCoordonnees(fichier);
+        if (villes.empty()) {
+            cerr << "Erreur : Impossible de lire les coordonnées pour " << fichier << endl;
+            exit(-1);
+        }
 
-	ifstream fichier;
-	// Ouvre le fichier des distances entre villes
-	fichier.open(nom_fichier, ifstream::in);
-	if(!fichier.is_open())
-	{
-		cerr<<"Fichier [" << nom_fichier << "] invalide."<<endl;
-		exit(-1);
-	}
+        // Générer la matrice des distances
+        std::vector<std::vector<double>> distances = genererMatriceDistances(villes);
 
-	for (int i=0; i<taille_chromosome; i++)
-	{
-		// Lecture matrice triangulaire
-		/**
-		for(int j=i+1; j<taille_chromosome; j++)
-		{
-			fichier >> les_distances[i][j];
-			les_distances[j][i] = les_distances[i][j];
-		}
-		*/
+        // Allouer la matrice des distances
+        les_distances = new int*[taille_chromosome];
+        for (int i = 0; i < taille_chromosome; i++) {
+            les_distances[i] = new int[taille_chromosome];
+            for (int j = 0; j < taille_chromosome; j++) {
+                les_distances[i][j] = static_cast<int>(distances[i][j]);
+            }
+        }
+    } else {
+        // Lecture classique pour les fichiers de distances
+        les_distances = new int*[taille_chromosome];
+        for (int i = 0; i < taille_chromosome; i++) {
+            les_distances[i] = new int[taille_chromosome];
+        }
 
-		// Lecture matrice carree
-		for(int j=0; j<taille_chromosome; j++)
-		{
-			fichier >> les_distances[i][j];
-		}
-	}
+        ifstream fichier;
+        fichier.open(nom_fichier, ifstream::in);
+        if (!fichier.is_open()) {
+            cerr << "Fichier [" << nom_fichier << "] invalide." << endl;
+            exit(-1);
+        }
 
-	for (int i=0; i<taille_chromosome; i++)
-		les_distances[i][i] = -1;
+        for (int i = 0; i < taille_chromosome; i++) {
+            for (int j = 0; j < taille_chromosome; j++) {
+                fichier >> les_distances[i][j];
+            }
+        }
 
-	fichier.close();
-	
-	// Affichage matrice des distances
-	cout << "Matrice des distances :\n" ;
-	for (int i=0; i<taille_chromosome; i++)
-	{
-		for(int j=0; j<taille_chromosome; j++)
-		{
-			cout << les_distances[i][j] << " " ;
-		}
-		cout << "\n" ;
-	}
-	cout << "---\n" ;
-	
-	
+        for (int i = 0; i < taille_chromosome; i++) {
+            les_distances[i][i] = -1;
+        }
+
+        fichier.close();
+    }
+
+    // Affichage de la matrice des distances (pour débogage)
+    cout << "Matrice des distances :\n";
+    for (int i = 0; i < taille_chromosome; i++) {
+        for (int j = 0; j < taille_chromosome; j++) {
+            cout << les_distances[i][j] << " ";
+        }
+        cout << "\n";
+    }
+    cout << "---\n";
 }
 

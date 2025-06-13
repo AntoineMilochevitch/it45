@@ -1,4 +1,5 @@
 #include "chromosome.h"
+#include <algorithm> // For std::reverse
 
 using namespace std;
 
@@ -163,4 +164,22 @@ bool chromosome::identique(chromosome* chro)
     	if (chro->genes [i] != this->genes[i])
     		return false;
     return true;
+}
+
+void chromosome::ameliorer_2opt(int **distance) {
+    bool amelioration = true;
+    while (amelioration) {
+        amelioration = false;
+        for (int i = 1; i < taille - 1; i++) {
+            for (int j = i + 1; j < taille; j++) {
+                int gain = distance[genes[i - 1]][genes[j]] + distance[genes[i]][genes[(j + 1) % taille]] -
+                           distance[genes[i - 1]][genes[i]] - distance[genes[j]][genes[(j + 1) % taille]];
+                if (gain < 0) {
+                    std::reverse(genes + i, genes + j + 1);
+                    amelioration = true;
+                }
+            }
+        }
+    }
+    evaluer(distance); // Réévaluer la fitness après amélioration
 }
