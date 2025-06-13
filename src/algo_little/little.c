@@ -1,10 +1,3 @@
-/**
- * Projec : gtsp (voyageur de commerce)
- *
- * Date   : 07/04/2014
- * Author : Olivier Grunder
- */
-
  #include <stdio.h>
  #include <stdlib.h>
  #include <math.h>
@@ -12,8 +5,8 @@
  #include <time.h>
  #include <limits.h>
 
- #define NBR_TOWNS 6
- int nbr_town = 6;
+ #define NBR_TOWNS 280
+ int nbr_town = 52;
 
 
  /* Distance matrix */
@@ -29,60 +22,69 @@
  int first_it = 1;
 
 
- /**
-  * Berlin52 :
-  *  6 towns : Best solution (2315.15): 0 1 2 3 5 4
-  * 10 towns : Best solution (2826.50): 0 1 6 2 7 8 9 3 5 4
-  */
- double coord[10][2]=
- {
-     {565.0,  575.0},
-     { 25.0,  185.0},
-     {345.0,  750.0},
-     {945.0,  685.0},
-     {845.0,  655.0},
-     {880.0,  660.0},
-     {25.0,  230.0},
-     {525.0,  1000.0},
-     {580.0,  1175.0},
-     {650.0,  1130.0}
- };
+ #define MAX_VILLES 280
+ double coord[MAX_VILLES][2];
 
- #define MAX_VILLES 52
 
- int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
-     FILE *fichier = fopen(nomFichier, "r");
-     if (!fichier) {
-         perror("Erreur lors de l'ouverture du fichier");
-         return 0;
-     }
 
-     char ligne[256];
-     while (fgets(ligne, sizeof(ligne), fichier)) {
-         if (strncmp(ligne, "NODE_COORD_SECTION", 18) == 0) {
-             break;
-         }
-     }
+int lireCoordonnees(const char *nomFichier, double coord[MAX_VILLES][2]) {
+	FILE *fichier = fopen(nomFichier, "r");
+    if (!fichier) {
+		printf("Erreur lors de l'ouverture du fichier %s\n", nomFichier);
+        perror("Erreur lors de l'ouverture du fichier");
+        return 0;
+    }
+
+    char ligne[256];
+	int dimension = 0;
+
+
+    while (fgets(ligne, sizeof(ligne), fichier)) {
+        // Supprimer les espaces au début de la ligne
+        char *trimmed = ligne;
+        while (*trimmed == ' ') trimmed++;
+
+        // Recherche de la dimension
+        if (strncmp(trimmed, "DIMENSION", 9) == 0) {
+            char *ptr = strstr(trimmed, ":");
+            if (ptr) {
+                dimension = atoi(ptr + 1);
+            }
+        }
+
+        // Chercher le début des coordonnées
+        if (strncmp(trimmed, "NODE_COORD_SECTION", 17) == 0) {
+            break;
+        }
+    }
+
+	if (dimension == 0 || dimension > MAX_VILLES) {
+        fprintf(stderr, "Dimension invalide ou trop grande (max: %d)\n", MAX_VILLES);
+        fclose(fichier);
+        return 0;
+    }
+
+
+	nbr_town = dimension;
+
+
 
      int index = 0;
      int id;
      double x, y;
-     while (fgets(ligne, sizeof(ligne), fichier)) {
-         if (strncmp(ligne, "EOF", 3) == 0) break;
+     while (fgets(ligne, sizeof(ligne), fichier) && index < dimension) {
+        if (strncmp(ligne, "EOF", 3) == 0) break;
 
-         if (sscanf(ligne, "%d %lf %lf", &id, &x, &y) == 3) {
-             if (index >= NBR_TOWNS) {
-                 fprintf(stderr, "Trop de villes dans le fichier\n");
-                 break;
-             }
-             coord[index][0] = x;
-             coord[index][1] = y;
-             index++;
-         }
-     }
+        if (sscanf(ligne, "%d %lf %lf", &id, &x, &y) == 3) {
+            coord[index][0] = x;
+            coord[index][1] = y;
+            index++;
+        }
+    }
+
 
      fclose(fichier);
-     return 1;
+     return index == dimension;
  }
 
  /**
@@ -423,13 +425,18 @@
  /**
   *
   */
- int main (int argc, char* argv[])
- {
+ int main (void){
      clock_t start, end;
      double cpu_time_used;
 
-     compute_matrix(dist);
-     best_eval = -1 ;
+     if (!lireCoordonnees("../../data/berlin52.tsp", coord)) {
+        printf("Erreur lors de la lecture du fichier\n");
+        return 1;
+    }
+
+    compute_matrix(dist);
+    best_eval = -1;
+
 
      /* Print problem information */
      printf ("Points coordinates:\n");
@@ -447,7 +454,7 @@
 
 
      /* initial solution */
-     double initial_value =initial_solution() ;
+     initial_solution() ;
 
      // Little
      int iteration = 0 ;
