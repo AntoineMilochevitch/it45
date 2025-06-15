@@ -66,11 +66,11 @@ chromosome* Ae::optimiser()
 
 		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
 			fils1->echange_2_genes_consecutifs();
-			fils1->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
+			//fils1->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
 		}
 		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
 			fils2->echange_2_genes_consecutifs();
-			fils2->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
+			//fils2->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
 		}
 
 		// �valuation des deux nouveaux individus g�n�r�s
