@@ -104,6 +104,24 @@ int main(int argc, char **argv)
         outputFile << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
         outputFile << "Gap : " << gap * 100 << "%" << endl;
         outputFile << "----------------------------------------" << endl;
+
+		// Écriture CSV pour Python
+        std::ofstream csvFile("results/algo_genetique_results.csv", std::ios::app);
+        if (csvFile.tellp() == 0) { // Si le fichier est vide, écrire l'en-tête
+            csvFile << "instance,nb_generation,taille_population,taux_croisement,taux_mutation,fitness,solution,temps,gap\n";
+        }
+        csvFile << instance << ","
+                << nb_generation << ","
+                << taille_population << ","
+                << taux_croisement << ","
+                << taux_mutation << ","
+                << best->fitness << ",\"";
+        for (int i = 0; i < best->taille; ++i) {
+            csvFile << best->genes[i];
+            if (i < best->taille - 1) csvFile << "-";
+        }
+        csvFile << "\"," << elapsed.count() << "," << gap * 100 << "\n";
+        csvFile.close();
 	}
 	return 0;
 }
