@@ -184,63 +184,89 @@ void Ae::croisement2X(chromosome* parent1, chromosome* parent2,
 
 		// Compléter enfant1 avec les gènes de parent2
 		if (std::find(enfant1->genes, enfant1->genes + nb_genes, gene_p2) == enfant1->genes + nb_genes) {
+			// Trouver la prochaine case libre (-1)
+			while (enfant1->genes[index1] != -1)
+				index1 = (index1 + 1) % nb_genes;
 			enfant1->genes[index1] = gene_p2;
 			index1 = (index1 + 1) % nb_genes;
 		}
 
 		// Compléter enfant2 avec les gènes de parent1
 		if (std::find(enfant2->genes, enfant2->genes + nb_genes, gene_p1) == enfant2->genes + nb_genes) {
+			// Trouver la prochaine case libre (-1)
+			while (enfant2->genes[index2] != -1)
+				index2 = (index2 + 1) % nb_genes;
 			enfant2->genes[index2] = gene_p1;
 			index2 = (index2 + 1) % nb_genes;
 		}
 	}
 }
 
-// Linear Order Crossover (LOX)
+// Opérateur de croisement LOX (Linear Order Crossover)
+// 1) On choisit aléatoirement deux points de croisement point1 et point2 (point1 < point2)
+// 2) On copie le segment [point1, point2] du parent1 dans enfant1 et du parent2 dans enfant2
+// 3) On complète chaque enfant avec les gènes manquants dans l'ordre du parent opposé, en commençant après point2 (avec retour circulaire)
+
 void Ae::croisementLOX(chromosome* parent1, chromosome* parent2,
-		chromosome* enfant_s1, chromosome* enfant_s2)
+                       chromosome* enfant1, chromosome* enfant2)
 {
-	int nb_genes = parent1->taille;
+    int nb_genes = parent1->taille;
 
-	// Choisir deux points de croisement aléatoires
-	int point1 = Random::aleatoire(nb_genes);
-	int point2 = Random::aleatoire(nb_genes);
+    // 1) Choisir deux points de croisement aléatoires
+    int point1 = Random::aleatoire(nb_genes);
+    int point2 = Random::aleatoire(nb_genes);
 
-	// S'assurer que point1 < point2
-	if (point1 > point2) {
-		std::swap(point1, point2);
-	}
+    // S'assurer que point1 < point2
+    if (point1 > point2) {
+        std::swap(point1, point2);
+    }
 
-	// Initialiser les enfants avec des marqueurs temporaires (-1)
-	std::fill(enfant_s1->genes, enfant_s1->genes + nb_genes, -1);
-	std::fill(enfant_s2->genes, enfant_s2->genes + nb_genes, -1);
+    // 2) Initialiser tous les gènes à -1
+    for (int i = 0; i < nb_genes; i++) {
+        enfant1->genes[i] = -1;
+        enfant2->genes[i] = -1;
+    }
 
-	// Copier les gènes entre les deux points de croisement des parents
-	for (int i = point1; i <= point2; i++) {
-		enfant_s1->genes[i] = parent1->genes[i];
-		enfant_s2->genes[i] = parent2->genes[i];
-	}
+    // Copier le segment [point1, point2] du parent1 dans enfant1 et du parent2 dans enfant2
+    for (int i = point1; i <= point2; i++) {
+        enfant1->genes[i] = parent1->genes[i];
+        enfant2->genes[i] = parent2->genes[i];
+    }
 
-	// Compléter les enfants avec les gènes restants du parent opposé
-	int index1 = (point2 + 1) % nb_genes;
-	int index2 = (point2 + 1) % nb_genes;
+    // 3) Compléter enfant1 avec les gènes de parent2 non déjà présents dans le segment copié
+    int index1 = (point2 + 1) % nb_genes;
+    for (int i = 0; i < nb_genes; i++) {
+        int gene = parent2->genes[(point2 + 1 + i) % nb_genes];
+        // Vérifier si le gène est déjà dans le segment copié
+        bool deja_present = false;
+        for (int j = point1; j <= point2; j++) {
+            if (enfant1->genes[j] == gene) {
+                deja_present = true;
+                break;
+            }
+        }
+        if (!deja_present) {
+            enfant1->genes[index1] = gene;
+            index1 = (index1 + 1) % nb_genes;
+        }
+    }
 
-	for (int i = 0; i < nb_genes; i++) {
-		int gene_p2 = parent2->genes[(point2 + 1 + i) % nb_genes];
-		int gene_p1 = parent1->genes[(point2 + 1 + i) % nb_genes];
-
-		// Compléter enfant_s1 avec les gènes de parent2
-		if (std::find(enfant_s1->genes, enfant_s1->genes + nb_genes, gene_p2) == enfant_s1->genes + nb_genes) {
-			enfant_s1->genes[index1] = gene_p2;
-			index1 = (index1 + 1) % nb_genes;
-		}
-
-		// Compléter enfant_s2 avec les gènes de parent1
-		if (std::find(enfant_s2->genes, enfant_s2->genes + nb_genes, gene_p1) == enfant_s2->genes + nb_genes) {
-			enfant_s2->genes[index2] = gene_p1;
-			index2 = (index2 + 1) % nb_genes;
-		}
-	}
+    // Compléter enfant2 avec les gènes de parent1 non déjà présents dans le segment copié
+    int index2 = (point2 + 1) % nb_genes;
+    for (int i = 0; i < nb_genes; i++) {
+        int gene = parent1->genes[(point2 + 1 + i) % nb_genes];
+        bool deja_present = false;
+        for (int j = point1; j <= point2; j++) {
+            if (enfant2->genes[j] == gene) {
+                deja_present = true;
+                break;
+            }
+        }
+        if (!deja_present) {
+            enfant2->genes[index2] = gene;
+            index2 = (index2 + 1) % nb_genes;
+        }
+    }
 }
 
 void Ae::constuction_distance(char* nom_fichier)
@@ -263,8 +289,12 @@ void Ae::constuction_distance(char* nom_fichier)
         for (int i = 0; i < taille_chromosome; i++) {
             les_distances[i] = new int[taille_chromosome];
             for (int j = 0; j < taille_chromosome; j++) {
-                les_distances[i][j] = static_cast<int>(distances[i][j]);
+                les_distances[i][j] = static_cast<int>(std::round(distances[i][j]));
             }
+        }
+        // Correction : mettre la diagonale à -1
+        for (int i = 0; i < taille_chromosome; i++) {
+            les_distances[i][i] = -1;
         }
     } else {
         // Lecture classique pour les fichiers de distances
@@ -293,15 +323,20 @@ void Ae::constuction_distance(char* nom_fichier)
         fichier.close();
     }
 
-	for (int i = 0; i < taille_chromosome; i++) {
+	// afficher la matrice 
+    for (int i = 0; i < taille_chromosome; i++) {
         for (int j = 0; j < taille_chromosome; j++) {
-			if (i != j) {
-				if (les_distances[i][j] < 0) {
-					cerr << "Erreur : Distance invalide entre " << i << " et " << j << endl;
-					exit(-1);
-				}
-			}
-            
+            cout << les_distances[i][j];
+            if (j < taille_chromosome - 1)
+                cout << " | ";
+        }
+        cout << endl;
+        // Ligne de séparation entre les lignes (optionnel)
+        if (i < taille_chromosome - 1) {
+            for (int k = 0; k < taille_chromosome; k++) {
+                cout << "---";
+            }
+            cout << endl;
         }
     }
 

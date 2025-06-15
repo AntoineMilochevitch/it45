@@ -45,10 +45,6 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    // Rediriger cout vers le fichier
-    std::streambuf* coutBuf = std::cout.rdbuf(); // Sauvegarder le buffer d'origine
-    std::cout.rdbuf(outputFile.rdbuf()); 
-
 	// valeurs par defaut
 	int nb_generation     = 600;
 	int taille_population = 100;
@@ -89,13 +85,25 @@ int main(int argc, char **argv)
 		cout << "croisement 2x" << endl;
 		cout << "mutation : 2 gènes consectuif" << endl;
 		cout << "La meilleure solution trouvee est : ";
-		best->afficher();
+		best->afficher(std::cout);
 		cout << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
 
 		float gap = calculer_gap(best->fitness, solutionsOptimales[instance]);
 		cout << "Gap : " << gap * 100 << "%" << endl;
 	
 		cout << "----------------------------------------" << endl;
+
+		// Écriture dans le fichier uniquement à la fin de chaque instance
+        outputFile << "Instance : " << instance << endl;
+        outputFile << "Nombre de générations : " << nb_generation << endl;
+        outputFile << "Taille de la population : " << taille_population << endl;
+        outputFile << "Taux de croisement : " << taux_croisement << endl;
+        outputFile << "Taux de mutation : " << taux_mutation << endl;
+        outputFile << "La meilleure solution trouvee est : ";
+        best->afficher(outputFile); // Il faut surcharger afficher(std::ostream&) si ce n'est pas déjà fait
+        outputFile << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
+        outputFile << "Gap : " << gap * 100 << "%" << endl;
+        outputFile << "----------------------------------------" << endl;
 	}
 	return 0;
 }

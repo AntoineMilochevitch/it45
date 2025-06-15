@@ -158,13 +158,18 @@ void chromosome::deplacement_1_gene()
         newPosition = Random::aleatoire(taille);
     }
 }
+
+void chromosome::afficher() {
+    afficher(std::cout);
+}
+
 	// affichage des param�tre d'un chromosome
-void chromosome::afficher()
+void chromosome::afficher(std::ostream& os)
 {
-	cout << genes[0];
-    for (int i=1;i<taille;i++)
-    	cout << "-" << genes[i];
-    cout << " => fitness = " << fitness << endl;
+    os << genes[0];
+    for (int i = 1; i < taille; i++)
+        os << "-" << genes[i];
+    os << " => fitness = " << fitness << std::endl;
 }
 
 bool chromosome::identique(chromosome* chro)

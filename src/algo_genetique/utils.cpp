@@ -3,60 +3,52 @@
 #include <vector>
 #include <string>
 #include <iostream>
-
 #include <cmath>
-#include <vector>
 
-struct Ville {
-    int id;
-    double x, y;
-};
+#include "utils.h"
 
 std::vector<Ville> lireCoordonnees(const std::string& fichier) {
-    std::ifstream file(fichier);
     std::vector<Ville> villes;
-    std::string ligne;
-
-    if (!file.is_open()) {
-        std::cerr << "Erreur : Impossible d'ouvrir le fichier " << fichier << std::endl;
+    std::ifstream fin(fichier);
+    if (!fin.is_open()) {
+        std::cerr << "Erreur d'ouverture du fichier : " << fichier << std::endl;
         return villes;
     }
 
-    bool sectionCoord = false;
-    while (std::getline(file, ligne)) {
-        if (ligne == "NODE_COORD_SECTION") {
-            sectionCoord = true;
-            continue;
-        }
-        if (ligne == "EOF") break;
-
-        if (sectionCoord) {
-            std::istringstream iss(ligne);
-            Ville ville;
-            iss >> ville.id >> ville.x >> ville.y;
-            villes.push_back(ville);
-        }
+    std::string line;
+    // Chercher la section NODE_COORD_SECTION
+    while (std::getline(fin, line)) {
+        if (line.find("NODE_COORD_SECTION") != std::string::npos)
+            break;
     }
 
-    file.close();
+    // Lire les coordonnées jusqu'à EOF ou une ligne contenant "EOF"
+    while (std::getline(fin, line)) {
+        if (line.find("EOF") != std::string::npos)
+            break;
+        std::istringstream iss(line);
+        int id;
+        double x, y;
+        if (!(iss >> id >> x >> y))
+            continue;
+        villes.push_back({id, x, y});
+    }
     return villes;
 }
 
 std::vector<std::vector<double>> genererMatriceDistances(const std::vector<Ville>& villes) {
-    int n = villes.size();
-    std::vector<std::vector<double>> distances(n, std::vector<double>(n, 0));
-
+    int n = static_cast<int>(villes.size());
+    std::vector<std::vector<double>> distances(n, std::vector<double>(n, 0.0));
     for (int i = 0; i < n; ++i) {
         for (int j = 0; j < n; ++j) {
-            if (i != j) {
+            if (i == j) {
+                distances[i][j] = 0.0;
+            } else {
                 double dx = villes[i].x - villes[j].x;
                 double dy = villes[i].y - villes[j].y;
                 distances[i][j] = std::sqrt(dx * dx + dy * dy);
-            } else {
-                distances[i][j] = -1; // Distance à soi-même
             }
         }
     }
-
     return distances;
 }

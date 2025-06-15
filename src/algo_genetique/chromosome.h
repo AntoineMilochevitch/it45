@@ -19,7 +19,8 @@ public:
 	~chromosome();      // destructeur de l'objet
 
 	// METHODES
-	void afficher();    // fonction d'affichage du chromosome (i.e. de la solution)
+    void afficher();
+	void afficher(std::ostream& os);   // fonction d'affichage du chromosome (i.e. de la solution)
 	void evaluer(int **distance);
 	                    // fonction d'�valuation du chromosome (c-�-d calcul la fitness)
                         //   Elle doit etre lanc�e � la creation des solution et apres
