@@ -51,6 +51,9 @@ int main(int argc, char **argv)
     cin >> nb_iteration;
     cout << "Durée de la liste tabou ? [defaut: 10] : ";
     cin >> duree_tabou;
+    int type_voisinage = 1; // 1: swap, 2: 2-opt
+    cout << "Type de voisinage ? (1: swap, 2: 2-opt) [defaut: 1] : ";
+    cin >> type_voisinage;
 
     // Ouvre le fichier CSV pour écrire les résultats
     std::ofstream csvFile("results/recherche_tabou_results.csv", std::ios::app);
@@ -71,13 +74,13 @@ int main(int argc, char **argv)
         auto start = chrono::high_resolution_clock::now();
 
         if (mode_arret == 1) {
-            rechercheTabou algo(nb_iteration, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()));
+            rechercheTabou algo(nb_iteration, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()), type_voisinage);
             best = algo.optimiser();
             iterations_effectuees = nb_iteration;
         } else {
             int iter = 0;
             auto t0 = chrono::high_resolution_clock::now();
-            rechercheTabou algo(1, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()));
+            rechercheTabou algo(nb_iteration, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()), type_voisinage);
             solution* current_best = nullptr;
             do {
                 solution* candidate = algo.optimiser();

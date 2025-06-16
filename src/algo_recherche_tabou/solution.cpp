@@ -133,5 +133,14 @@ void solution::swap(int ville1, int ville2)
     ville[ville2] = inter;
 }
 
-
+void solution::reverse(int i, int j)
+{
+    while (i < j) {
+        int tmp = ville[i];
+        ville[i] = ville[j];
+        ville[j] = tmp;
+        i++;
+        j--;
+    }
+}
 

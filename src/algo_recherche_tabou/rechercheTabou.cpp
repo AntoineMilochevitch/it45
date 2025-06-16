@@ -5,12 +5,13 @@ using namespace std;
 // Initialisation des param�tres de la RechercheTabou
 // et g�n�ration de la solution initiale.
 // Initialisation  de la liste tabou
-rechercheTabou::rechercheTabou(int nbiter,int dt,int nv, char* nom_fichier)
+rechercheTabou::rechercheTabou(int nbiter,int dt,int nv, char* nom_fichier, int type_vois)
 {
     nbiterations    = nbiter;
     iter_courante   = 0;
     duree_tabou     = dt;
     taille_solution = nv;
+    type_voisinage  = type_vois;
     constuction_distance(taille_solution, nom_fichier);
     courant         = new solution(nv);
     courant->evaluer(les_distances);
@@ -116,7 +117,7 @@ void rechercheTabou::constuction_distance(int nv, char* nom_fichier)
         }
     }*/
 
-    if (fichier.find("kroA100.tsp") != std::string::npos) {
+    /*if (fichier.find("kroA100.tsp") != std::string::npos) {
     std::cout << "Aperçu matrice distances kroA100:" << std::endl;
     for (int i = 0; i < 5; i++) {
         for (int j = 0; j < 5; j++) {
@@ -124,7 +125,7 @@ void rechercheTabou::constuction_distance(int nv, char* nom_fichier)
         }
         std::cout << std::endl;
     }
-}
+}*/
 }
 
 bool rechercheTabou::nonTabou(int i, int j)
@@ -214,6 +215,27 @@ void rechercheTabou::voisinage_swap(int &best_i, int &best_j)
     }
 }
 
+
+void rechercheTabou::voisinage_2opt(int &best_i, int &best_j)
+{
+    int best_vois = 100000;
+    for (int i = 1; i < taille_solution - 1; i++) {
+        for (int j = i + 1; j < taille_solution; j++) {
+            // Appliquer 2-opt entre i et j
+            courant->reverse(i, j);
+            courant->evaluer(les_distances);
+            if (nonTabou(i, j) && courant->fitness < best_vois) {
+                best_vois = courant->fitness;
+                best_i = i;
+                best_j = j;
+            }
+            // Annuler le 2-opt
+            courant->reverse(i, j);
+            courant->evaluer(les_distances);
+        }
+    }
+}
+
 //proc�dure principale de la recherche
 solution* rechercheTabou::optimiser()
 {
@@ -235,10 +257,15 @@ solution* rechercheTabou::optimiser()
     // Tant que le nombre d'it�rations limite n'est pas atteint
     for(iter_courante=0; iter_courante<nbiterations; iter_courante++)
     {
-        voisinage_swap(best_i, best_j);            // La fonction 'voisinage_swap' retourne le meilleur
-        //   mouvement non tabou; c'est le couple (best_i, best_j)
-        courant->swap(best_i, best_j);
-        //  On d�place la solution courante gr�ce � ce mouvement
+        if (type_voisinage == 1)
+            voisinage_swap(best_i, best_j);
+        else
+            voisinage_2opt(best_i, best_j);
+
+        if (type_voisinage == 1)
+            courant->swap(best_i, best_j);
+        else
+            courant->reverse(best_i, best_j);
 
         courant->ordonner();                        // On r�ordonne la solution en commen�ant par 0
         courant->evaluer(les_distances);            // On �value la nouvelle solution courante
