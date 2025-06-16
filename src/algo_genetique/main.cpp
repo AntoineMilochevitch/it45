@@ -25,15 +25,6 @@ std::map<std::string, int> solutionsOptimales = {
 };
 
 int main(int argc, char **argv)
-// argc : nombre de parametres
-// argv : tableau contenant les parametres
-// Soit l'executable 'algo_evo' ne prend pas d'arguments soit il prend 6 arguments :
-//    1. nombre de g�n�ration (entier > 0)
-//    2. taille de la population (entier > 0)
-//    3. taux de croisement (0 <= reel <= 1)
-//    4. taux de mutation (0 <= reel <= 1)
-//    5. nombre de villes (=taille d'un chromosome)
-//    6. nom du fichier indiquant les distances entre villes
 {
 	//initialise le g�n�rateur de nombre al�atoire
 	Random::randomize();
@@ -58,6 +49,17 @@ int main(int argc, char **argv)
 		"data/eil76.tsp",
 		"data/kroA100.tsp"
 	};
+
+	int choix_croisement = 1;
+    bool utiliser_2opt = true;
+    cout << "Quel croisement utiliser ? (1: 1X, 2: 2X, 3: LOX) [defaut: 1] : ";
+    cin >> choix_croisement;
+    cout << "Utiliser 2-opt ? (1: oui, 0: non) [defaut: 1] : ";
+    cin >> utiliser_2opt;
+
+    CroisementType croisement_type = CROISEMENT_2X;
+    if (choix_croisement == 2) croisement_type = CROISEMENT_2X;
+    else if (choix_croisement == 3) croisement_type = CROISEMENT_LOX;
 	
 
 	for (const auto& instance : instances) {
@@ -69,7 +71,7 @@ int main(int argc, char **argv)
 		else if (instance == "data/kroA100.tsp") taille_chromosome = 100;
 	
 		// Passer le fichier des distances ou des coordonnées à l'algorithme génétique
-		Ae algo(nb_generation, taille_population, taux_croisement, taux_mutation, taille_chromosome, const_cast<char*>(instance.c_str()));
+		Ae algo(nb_generation, taille_population, taux_croisement, taux_mutation, taille_chromosome, const_cast<char*>(instance.c_str()), croisement_type, utiliser_2opt);
 	
 		auto start = chrono::high_resolution_clock::now();
 		chromosome *best = algo.optimiser();
@@ -106,10 +108,15 @@ int main(int argc, char **argv)
         outputFile << "----------------------------------------" << endl;
 
 		// Écriture CSV pour Python
+
+		std::string croisement_str = (croisement_type == CROISEMENT_1X) ? "1x" :
+                                     (croisement_type == CROISEMENT_2X) ? "2x" : "lox";
+        std::string opt_str = utiliser_2opt ? "2opt" : "no2opt";
+
         std::ofstream csvFile("results/algo_genetique_results.csv", std::ios::app);
         if (csvFile.tellp() == 0) { // Si le fichier est vide, écrire l'en-tête
-            csvFile << "instance,nb_generation,taille_population,taux_croisement,taux_mutation,fitness,solution,temps,gap\n";
-        }
+   			csvFile << "instance,nb_generation,taille_population,taux_croisement,taux_mutation,fitness,solution,temps,gap,croisement,2opt\n";
+		}
         csvFile << instance << ","
                 << nb_generation << ","
                 << taille_population << ","
@@ -120,7 +127,8 @@ int main(int argc, char **argv)
             csvFile << best->genes[i];
             if (i < best->taille - 1) csvFile << "-";
         }
-        csvFile << "\"," << elapsed.count() << "," << gap * 100 << "\n";
+        csvFile << "\"," << elapsed.count() << "," << gap * 100 << ","
+                << croisement_str << "," << opt_str << "\n";
         csvFile.close();
 	}
 	return 0;

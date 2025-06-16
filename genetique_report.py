@@ -6,6 +6,8 @@ import seaborn as sns
 # Charger les résultats
 df = pd.read_csv("results/algo_genetique_results.csv")
 
+df["gap"] = df["gap"].astype(float)
+
 # Créer une figure
 fig, ax = plt.subplots(figsize=(10, 6))
 sns.barplot(data=df, x="instance", y="fitness", ax=ax)
@@ -47,10 +49,14 @@ plt.figtext(0.5, 0.02, param_text, ha='center', fontsize=12, bbox={"facecolor":"
 filename = (
     f"results/genetique_summary_"
     f"gen{params['nb_generation']}_pop{params['taille_population']}_"
-    f"cross{params['taux_croisement']}_mut{params['taux_mutation']}.png"
+    f"cross{params['taux_croisement']}_mut{params['taux_mutation']}_"
+    f"{params['croisement']}_{params['2opt']}.png"
 )
 
 # Sauvegarder l'image
 plt.savefig(filename, bbox_inches='tight')
 plt.show()
 plt.close()
+
+with open("results/algo_genetique_results.csv", "w") as f:
+    pass  # Cela vide le fichier

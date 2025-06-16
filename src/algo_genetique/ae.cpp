@@ -4,15 +4,18 @@
 using namespace std;
 
 // initialisation des param�tres de l'AG et g�n�ration de la population initiale
-Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier)
+Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier,
+       CroisementType croisement_type, bool utiliser_2opt)
 {
-	nbgenerations     = nbg;
-	taille_pop        = tp;
-	taux_croisement   = tcroisement;
-	taux_mutation     = tmutation;
-	taille_chromosome = tc;
-	constuction_distance(nom_fichier);
-	pop   = new population(taille_pop, taille_chromosome);
+    nbgenerations     = nbg;
+    taille_pop        = tp;
+    taux_croisement   = tcroisement;
+    taux_mutation     = tmutation;
+    taille_chromosome = tc;
+    this->croisement_type = croisement_type;
+    this->utiliser_2opt = utiliser_2opt;
+    constuction_distance(nom_fichier);
+    pop   = new population(taille_pop, taille_chromosome);
 }
 
 // destructeur de l'objet Ae
@@ -56,7 +59,12 @@ chromosome* Ae::optimiser()
 		// On effectue un croisementavec une probabilit� "taux_croisement"
 		if(Random::aleatoire(1000)/1000.0 < taux_croisement)
 		{
-			croisement1X(pere1, pere2, fils1, fils2);
+			if (croisement_type == CROISEMENT_1X)
+                croisement1X(pere1, pere2, fils1, fils2);
+            else if (croisement_type == CROISEMENT_2X)
+                croisement2X(pere1, pere2, fils1, fils2);
+            else
+                croisementLOX(pere1, pere2, fils1, fils2);
 		}
 		else
 		{
@@ -66,11 +74,14 @@ chromosome* Ae::optimiser()
 
 		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
 			fils1->echange_2_genes_consecutifs();
-			//fils1->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
-		}
+			if (utiliser_2opt)
+                fils1->ameliorer_2opt(les_distances);
+        }
+		
 		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
 			fils2->echange_2_genes_consecutifs();
-			//fils2->ameliorer_2opt(les_distances); // Amélioration avec 2-opt
+			if (utiliser_2opt)
+                fils2->ameliorer_2opt(les_distances);
 		}
 
 		// �valuation des deux nouveaux individus g�n�r�s

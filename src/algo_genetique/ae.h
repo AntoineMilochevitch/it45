@@ -12,6 +12,8 @@
 using namespace std;
 // La classe Ae d�finie les param�tres d'une ex�cution d'un algorithme
 //    �volutionniste ainsi que la proc�dure principale de recherche
+
+enum CroisementType { CROISEMENT_1X, CROISEMENT_2X, CROISEMENT_LOX };
 class Ae{
 public:
     // ATTRIBUTS
@@ -22,9 +24,12 @@ public:
 	int taille_chromosome;   // nombre de g�nes dans le chromosome
 	population *pop;         // liste des individus de la population
     int **les_distances;     // matrice des distances entre les villes
+	CroisementType croisement_type;
+    bool utiliser_2opt;
 
 	// CONSTRUCTEURS
-	Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier);
+	Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier,
+       CroisementType croisement_type = CROISEMENT_2X, bool utiliser_2opt = true);
                              // constructeur de l'objet Algaorithme evolutioniste
 	~Ae();                   // destructeur de l'objet Ae
 
