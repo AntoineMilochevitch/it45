@@ -9,19 +9,20 @@
 #include <math.h>
 #include <stdio.h>
 #include "solution.h"
+#include "utils.h"
 
-// cette classe définie les paramètres d'une exécution
-// de la recherche tabou ainsi que la procédure principale de recherche
+// cette classe dï¿½finie les paramï¿½tres d'une exï¿½cution
+// de la recherche tabou ainsi que la procï¿½dure principale de recherche
 class rechercheTabou{
     public:
         // ATTRIBUTS
         int iter_courante;
-        int nbiterations;              // nombre d'itérations après quoi la recherche est arrétée
-        int duree_tabou;               // durée tabou en nombre d'itérations
+        int nbiterations;              // nombre d'itï¿½rations aprï¿½s quoi la recherche est arrï¿½tï¿½e
+        int duree_tabou;               // durï¿½e tabou en nombre d'itï¿½rations
         int taille_solution;           // nombre de villes dans le solution
-        solution *courant;             // solution courante gérée par la RechercheTabou
+        solution *courant;             // solution courante gï¿½rï¿½e par la RechercheTabou
         int **list_tabou2;             // liste des solutions tabou
-        int **list_tabou;              // liste des durées tabou associées à chaque couple de villes
+        int **list_tabou;              // liste des durï¿½es tabou associï¿½es ï¿½ chaque couple de villes
         int **les_distances;           // matrice des distances entre les villes	                                                 
 
         // CONSTRUCTEURS
@@ -33,7 +34,7 @@ class rechercheTabou{
         bool nonTabou2(solution* sol);                   // la solution 'sol' est tabou : oui ou non
         void voisinage_swap(int& best_i, int &best_j);   // donne le meilleur voisin non tabou
         void constuction_distance(int nv, char* nom_fichier);                
-        void mise_a_jour_liste_tabou_2(solution* sol, int& position); // ajout de la solution 'sol' à la position 'position' de la liste tabou
+        void mise_a_jour_liste_tabou_2(solution* sol, int& position); // ajout de la solution 'sol' ï¿½ la position 'position' de la liste tabou
         solution* optimiser();                           // lancement de la rechercheTabou
 };
 

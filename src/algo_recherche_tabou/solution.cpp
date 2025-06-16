@@ -17,9 +17,9 @@ solution::solution(int nv):taille(nv)
         while(recommence)
         {
             recommence = false;
-            // on tire aléatoirement la ville suivante
+            // on tire alï¿½atoirement la ville suivante
             a = Random::aleatoire(taille);
-            // la ville ne doit pas être déjà dans le cycle
+            // la ville ne doit pas ï¿½tre dï¿½jï¿½ dans le cycle
             // si tel est le cas on recommence
             for (int j=0; j<i; j++)
                 if (a==ville[j])
@@ -62,12 +62,16 @@ bool solution::operator==(const solution& chro)
     return true;
 }
 
-// évaluation d'une solution : c'est la somme des distances reliant les villes
+// ï¿½valuation d'une solution : c'est la somme des distances reliant les villes
 void solution::evaluer(int **distance)
 {
     fitness = 0;
-    for(int i=0;i<taille-1;i++)
+    for(int i=0;i<taille-1;i++) {
+        if (ville[i] < 0 || ville[i] >= taille || ville[i+1] < 0 || ville[i+1] >= taille) {
+            std::cerr << "Indice ville hors borne: " << ville[i] << " ou " << ville[i+1] << std::endl;
+        }
         fitness += distance[ville[i]][ville[i+1]];
+    }
     fitness+=distance[ville[0]][ville[taille-1]];
 }
 
@@ -78,13 +82,13 @@ void solution::afficher()
     cout << "--> " << fitness << " km" << endl;
 }
 
-// on impose arbitrairement que la 2ième ville visitée (ville[1])
-//   ait un n° plus petit que la dernière ville visitée (ville[taille-1])
+// on impose arbitrairement que la 2iï¿½me ville visitï¿½e (ville[1])
+//   ait un nï¿½ plus petit que la derniï¿½re ville visitï¿½e (ville[taille-1])
 //   i.e. : ville[1] > ville[taille-1]
 void solution::ordonner()
 {
     int inter, k;
-    // Place la ville "0" en tête de la solution (ville[0])
+    // Place la ville "0" en tï¿½te de la solution (ville[0])
     if (ville[0] != 0)
     {
         int position_0 = 0;
@@ -109,7 +113,7 @@ void solution::ordonner()
         delete[] ville_c;
     }
 
-    // Le numéro de la 2eme ville doit être plus petit que celui de la dernière ville
+    // Le numï¿½ro de la 2eme ville doit ï¿½tre plus petit que celui de la derniï¿½re ville
     if (ville[1] > ville[taille-1])
     {
         for(int k=1; k<=1+(taille-2)/2; k++)
@@ -121,7 +125,7 @@ void solution::ordonner()
     }
 }
 
-// on échange 2 villes dans la solution
+// on ï¿½change 2 villes dans la solution
 void solution::swap(int ville1, int ville2)
 {
     int inter    = ville[ville1];

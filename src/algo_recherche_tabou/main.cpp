@@ -3,65 +3,123 @@
 #include <math.h>
 #include <string.h>
 #include <stdio.h>
+#include <chrono>
+#include <map>
+#include <vector>
 #include "random.h"
 #include "rechercheTabou.h"
 #include "solution.h"
 
 using namespace std;
 
+double calculer_gap(int z, int z_optimal) {
+    return (double)(z - z_optimal) / z_optimal;
+}
+
+std::map<std::string, int> solutionsOptimales = {
+    {"data/a280.tsp", 2579},
+    {"data/berlin52.tsp", 7542},
+    {"data/eil76.tsp", 538},
+    {"data/kroA100.tsp", 21282}
+};
+
 int main(int argc, char **argv)
-    // argc : nombre de parametres
-    // argv : tableau contenant les parametres
-    // Soit l'executable 'algo_tabou' ne prend pas d'arguments soit il prend 4 arguments :
-    //   1.  nombre d'itéreation (critère d'arret de l'algo)
-    //   2.  durée de la liste Tabou
-    //   3.  nombre de villes
-    //   4.  nom du fichier indiquant les distances entre villes
 {
-    //initialise le générateur de nombre aléatoire
     Random::randomize();
 
-    // valeurs par defaut
+    std::vector<std::string> instances = {
+        "data/a280.tsp",
+        "data/berlin52.tsp",
+        "data/eil76.tsp",
+        "data/kroA100.tsp"
+    };
+
+    // ParamÃ¨tres par dÃ©faut
     int nb_iteration = 10;
-    int duree_tabou  = 0;
-    int nb_villes    = 10;
-    char fileDistances[100];
-    strcpy(fileDistances,"data/distances_entre_villes_10.txt");
-    
-    cout << "Synopsis: " << argv[0] << " nbr_iter tabu_length number_town distance_file " << endl;
-    cout << "   1. nbr_iter      : number of iterations, default value="<< nb_iteration << endl;
-    cout << "   2. tabu_length   : tabu list length, default value=" << duree_tabou << endl;
-    cout << "   3. number_town   : number of towns of instance, default value=" << nb_villes << endl;
-    cout << "   4. distance_file : distance matrix filename, default value=" << fileDistances << endl;    
-    cout << endl ;
-    
-    if (argc == 5)
-    {
-        nb_iteration = atoi(argv[1]);
-        duree_tabou  = atoi(argv[2]);
-        nb_villes    = atoi(argv[3]);
-        strcpy(fileDistances,argv[4]);
+    int duree_tabou  = 10;
+    int nb_villes    = 0;
+
+    int mode_arret = 1; // 1: nb itÃ©rations, 2: temps
+    int duree_seconde = 60;
+    cout << "Mode d'arret ? (1: nb iterations, 2: temps) [defaut: 1] : ";
+    cin >> mode_arret;
+    if (mode_arret == 2) {
+        cout << "DurÃ©e maximale (en secondes) ? [defaut: 60] : ";
+        cin >> duree_seconde;
     }
-    else if (argc != 1)
-    {
-        cout << "Incorrect arguments" << endl;
-        exit(EXIT_FAILURE);
+    cout << "Nombre d'iterations ? [defaut: 1000] : ";
+    cin >> nb_iteration;
+    cout << "DurÃ©e de la liste tabou ? [defaut: 10] : ";
+    cin >> duree_tabou;
+
+    // Ouvre le fichier CSV pour Ã©crire les rÃ©sultats
+    std::ofstream csvFile("results/recherche_tabou_results.csv", std::ios::app);
+    if (csvFile.tellp() == 0) {
+        csvFile << "instance,mode_arret,nb_iteration,duree_tabou,fitness,solution,temps,gap,nb_villes,duree_seconde\n";
     }
 
-    // Intialise les paramètre de la RechercheTabou et crée la solution initiale
-    //   1ier  paramètre : nombre d'itéreation (critère d'arret de l'algo)
-    //   2ième paramètre : durée de la liste Tabou
-    //   3ième paramètre : nombre de villes
-    //   4ième paramètre : fichier contenant les disantances entre les villes    
-    rechercheTabou algo(nb_iteration, duree_tabou, nb_villes, fileDistances);
+    for (const auto& instance : instances) {
+        if (instance == "data/a280.tsp") nb_villes = 280;
+        else if (instance == "data/berlin52.tsp") nb_villes = 52;
+        else if (instance == "data/eil76.tsp") nb_villes = 76;
+        else if (instance == "data/kroA100.tsp") nb_villes = 100;
 
-    // Lance la recherche avec la méthode Tabou
-    solution* best = algo.optimiser();
-    // Affiche la meilleure solution rencontrée
-    cout << endl << "la meilleure solution rencontree est : ";
-    best->afficher();
+        cout << "Instance : " << instance << endl;
 
-    delete best;
+        solution* best = nullptr;
+        int iterations_effectuees = 0;
+        auto start = chrono::high_resolution_clock::now();
 
+        if (mode_arret == 1) {
+            rechercheTabou algo(nb_iteration, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()));
+            best = algo.optimiser();
+            iterations_effectuees = nb_iteration;
+        } else {
+            int iter = 0;
+            auto t0 = chrono::high_resolution_clock::now();
+            rechercheTabou algo(1, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()));
+            solution* current_best = nullptr;
+            do {
+                solution* candidate = algo.optimiser();
+                if (!current_best || candidate->fitness < current_best->fitness) {
+                    if (current_best) delete current_best;
+                    current_best = new solution(*candidate);
+                }
+                delete candidate;
+                iter++;
+                auto t1 = chrono::high_resolution_clock::now();
+                chrono::duration<double> elapsed = t1 - t0;
+                if (elapsed.count() >= duree_seconde) break;
+            } while (true);
+            best = current_best;
+            iterations_effectuees = iter;
+        }
+
+        auto end = chrono::high_resolution_clock::now();
+        chrono::duration<double> elapsed = end - start;
+
+        cout << "La meilleure solution trouvee est : ";
+        best->afficher();
+        float gap = calculer_gap(best->fitness, solutionsOptimales[instance]);
+        cout << "Gap : " << gap * 100 << "%" << endl;
+        cout << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
+        cout << "----------------------------------------" << endl;
+
+        // Ecriture CSV
+        csvFile << instance << ","
+                << (mode_arret == 1 ? "iteration" : "temps") << ","
+                << iterations_effectuees << ","
+                << duree_tabou << ","
+                << best->fitness << ",\"";
+        for (int i = 0; i < best->taille; ++i) {
+            csvFile << best->ville[i];
+            if (i < best->taille - 1) csvFile << "-";
+        }
+        csvFile << "\"," << elapsed.count() << "," << gap * 100 << ","
+                << nb_villes << "," << duree_seconde << "\n";
+
+        delete best;
+    }
+    csvFile.close();
     return 0;
 }
