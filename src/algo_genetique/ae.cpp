@@ -5,7 +5,7 @@ using namespace std;
 
 // initialisation des param�tres de l'AG et g�n�ration de la population initiale
 Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier,
-       CroisementType croisement_type, bool utiliser_2opt)
+       CroisementType croisement_type, bool utiliser_2opt, int mode_arret, int duree_seconde)
 {
     nbgenerations     = nbg;
     taille_pop        = tp;
@@ -14,6 +14,8 @@ Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_
     taille_chromosome = tc;
     this->croisement_type = croisement_type;
     this->utiliser_2opt = utiliser_2opt;
+    this->mode_arret = mode_arret;
+    this->duree_seconde = duree_seconde;
     constuction_distance(nom_fichier);
     pop   = new population(taille_pop, taille_chromosome);
 }
@@ -31,7 +33,7 @@ Ae::~Ae()
 }
 
 // proc�dure principale de la recherche
-chromosome* Ae::optimiser()
+chromosome* Ae::optimiser(int& nb_generations_effectuees)
 {
 	int amelioration = 0;
 	chromosome *fils1 = new chromosome(taille_chromosome);
@@ -49,62 +51,57 @@ chromosome* Ae::optimiser()
 
 	best_fitness = pop->individus[pop->ordre[0]]->fitness;
 
-	//tant que le nombre de g�n�rations limite n'est pas atteint
-	for(int g=0; g<nbgenerations; g++)
-	{
-		//s�lection de deux individus de la population courante
-		pere1 = pop->selection_roulette();
-		pere2 = pop->selection_roulette();
-
-		// On effectue un croisementavec une probabilit� "taux_croisement"
-		if(Random::aleatoire(1000)/1000.0 < taux_croisement)
-		{
-			if (croisement_type == CROISEMENT_1X)
+	auto start = std::chrono::high_resolution_clock::now();
+    int g = 0;
+    while (true) {
+        // Arrêt selon le mode
+        if (mode_arret == 1 && g >= nbgenerations) break;
+        if (mode_arret == 2) {
+            auto now = std::chrono::high_resolution_clock::now();
+            std::chrono::duration<double> elapsed = now - start;
+            if (elapsed.count() >= duree_seconde) break;
+        }
+        // ...boucle d'évolution inchangée...
+        pere1 = pop->selection_roulette();
+        pere2 = pop->selection_roulette();
+        if(Random::aleatoire(1000)/1000.0 < taux_croisement)
+        {
+            if (croisement_type == CROISEMENT_1X)
                 croisement1X(pere1, pere2, fils1, fils2);
             else if (croisement_type == CROISEMENT_2X)
                 croisement2X(pere1, pere2, fils1, fils2);
             else
                 croisementLOX(pere1, pere2, fils1, fils2);
-		}
-		else
-		{
-			fils1->copier(pere1);
-			fils2->copier(pere2);
-		}
-
-		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
-			fils1->echange_2_genes_consecutifs();
-			if (utiliser_2opt)
+        }
+        else
+        {
+            fils1->copier(pere1);
+            fils2->copier(pere2);
+        }
+        if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
+            fils1->echange_2_genes_consecutifs();
+            if (utiliser_2opt)
                 fils1->ameliorer_2opt(les_distances);
         }
-		
-		if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
-			fils2->echange_2_genes_consecutifs();
-			if (utiliser_2opt)
+        if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
+            fils2->echange_2_genes_consecutifs();
+            if (utiliser_2opt)
                 fils2->ameliorer_2opt(les_distances);
-		}
-
-		// �valuation des deux nouveaux individus g�n�r�s
-		fils1->evaluer(les_distances);
-		fils2->evaluer(les_distances);
-
-		// Insertion des nouveaux individus dans la population
-		pop->remplacement_roulette(fils1);
+        }
+        fils1->evaluer(les_distances);
+        fils2->evaluer(les_distances);
+        pop->remplacement_roulette(fils1);
 		pop->remplacement_roulette(fils2);
-
-		// On r�ordonne la population selon la fitness
-		pop->reordonner();
-
-		// Si l'un des nouveaux indivudus-solutions est le meilleur jamais rencont�
-		if (pop->individus[pop->ordre[0]]->fitness < best_fitness)
-		{
-			best_fitness = pop->individus[pop->ordre[0]]->fitness;
-			amelioration = g;
-		}
-	}
-
-	//retourner le meilleur individu rencontr� pendant la recherche
-	return pop->individus[pop->ordre[0]];
+        pop->reordonner();
+        if (pop->individus[pop->ordre[0]]->fitness < best_fitness)
+        {
+            best_fitness = pop->individus[pop->ordre[0]]->fitness;
+            amelioration = g;
+        }
+        g++;
+    }
+    nb_generations_effectuees = g;
+    return pop->individus[pop->ordre[0]];
 }
 
 // op�rateur de croisement � un point : croisement 1X

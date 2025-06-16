@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <chrono>
 #include "population.h"
 #include "chromosome.h"
 
@@ -26,17 +27,20 @@ public:
     int **les_distances;     // matrice des distances entre les villes
 	CroisementType croisement_type;
     bool utiliser_2opt;
+	int mode_arret;      // 1: nb generations, 2: temps
+    int duree_seconde;   // durée max en secondes
 
 	// CONSTRUCTEURS
 	Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier,
-       CroisementType croisement_type = CROISEMENT_2X, bool utiliser_2opt = true);
+       CroisementType croisement_type = CROISEMENT_2X, bool utiliser_2opt = true,
+       int mode_arret = 1, int duree_seconde = 60);
                              // constructeur de l'objet Algaorithme evolutioniste
 	~Ae();                   // destructeur de l'objet Ae
 
 	// METHODES
 	void constuction_distance(char* nom_fichier);
                              // constuie la matrice des distances
-	chromosome* optimiser(); // fonction principale qui d�cit le d�roulement de l'algorithme �volusionniste
+	chromosome* optimiser(int& nb_generations_effectuees); // fonction principale qui d�cit le d�roulement de l'algorithme �volusionniste
 
 	// OPERATEURS DE CROISEMENT
 	// op�rateur de croisement 1X de deux chromosomes
