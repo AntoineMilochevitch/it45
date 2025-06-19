@@ -41,24 +41,26 @@ int main(int argc, char **argv)
 
     int mode_arret = 1; // 1: nb itérations, 2: temps
     int duree_seconde = 60;
-    cout << "Mode d'arret ? (1: nb iterations, 2: temps) [defaut: 1] : ";
+    cout << "Mode d'arret ? (1: nb iterations, 2: temps) : ";
     cin >> mode_arret;
     if (mode_arret == 2) {
-        cout << "Durée maximale (en secondes) ? [defaut: 60] : ";
+        cout << "Durée maximale (en secondes) ? : ";
         cin >> duree_seconde;
     }
-    cout << "Nombre d'iterations ? [defaut: 1000] : ";
-    cin >> nb_iteration;
-    cout << "Durée de la liste tabou ? [defaut: 10] : ";
+    if (mode_arret == 1) {
+        cout << "Nombre d'iterations ? : ";
+        cin >> nb_iteration;
+    }
+    cout << "Durée de la liste tabou ? : ";
     cin >> duree_tabou;
     int type_voisinage = 1; // 1: swap, 2: 2-opt
-    cout << "Type de voisinage ? (1: swap, 2: 2-opt) [defaut: 1] : ";
+    cout << "Type de voisinage ? (1: swap, 2: 2-opt) : ";
     cin >> type_voisinage;
 
     // Ouvre le fichier CSV pour écrire les résultats
     std::ofstream csvFile("results/recherche_tabou_results.csv", std::ios::app);
     if (csvFile.tellp() == 0) {
-        csvFile << "instance,mode_arret,nb_iteration,duree_tabou,fitness,solution,temps,gap,nb_villes,duree_seconde\n";
+        csvFile << "instance,mode_arret,nb_iteration,duree_tabou,fitness,solution,temps,gap,nb_villes,duree_seconde,type_voisinage\n";
     }
 
     for (const auto& instance : instances) {
@@ -86,9 +88,10 @@ int main(int argc, char **argv)
                 solution* candidate = algo.optimiser();
                 if (!current_best || candidate->fitness < current_best->fitness) {
                     if (current_best) delete current_best;
-                    current_best = new solution(*candidate);
+                    current_best = candidate;
+                } else {
+                    delete candidate;
                 }
-                delete candidate;
                 iter++;
                 auto t1 = chrono::high_resolution_clock::now();
                 chrono::duration<double> elapsed = t1 - t0;
@@ -110,16 +113,18 @@ int main(int argc, char **argv)
 
         // Ecriture CSV
         csvFile << instance << ","
-                << (mode_arret == 1 ? "iteration" : "temps") << ","
-                << iterations_effectuees << ","
-                << duree_tabou << ","
-                << best->fitness << ",\"";
+            << (mode_arret == 1 ? "iteration" : "temps") << ","
+            << iterations_effectuees << ","
+            << duree_tabou << ","
+            << best->fitness << ",\"";
         for (int i = 0; i < best->taille; ++i) {
             csvFile << best->ville[i];
             if (i < best->taille - 1) csvFile << "-";
         }
+
         csvFile << "\"," << elapsed.count() << "," << gap * 100 << ","
-                << nb_villes << "," << duree_seconde << "\n";
+            << nb_villes << "," << duree_seconde << ","
+            << type_voisinage << "\n";
 
         delete best;
     }

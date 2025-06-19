@@ -34,14 +34,16 @@ solution::solution(int nv):taille(nv)
 // copie les villes d'une solution. la fitness n'est reprise
 solution& solution::operator=(const solution& source)
 {
-    if (this->taille!=source.taille) {
-        if (ville) delete[] ville; 
-        taille = source.taille ;
-        ville  = new int[taille];
+    if (this == &source) return *this; // auto-affectation
+    if (taille != source.taille) {
+        if (ville) delete[] ville;
+        taille = source.taille;
+        ville = new int[taille];
     }
-    for(int i=0; i<taille; i++)
+    for (int i = 0; i < taille; i++)
         ville[i] = source.ville[i];
-    return *this ;
+    fitness = source.fitness;
+    return *this;
 }
 
 

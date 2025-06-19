@@ -13,6 +13,7 @@ rechercheTabou::rechercheTabou(int nbiter,int dt,int nv, char* nom_fichier, int 
     taille_solution = nv;
     type_voisinage  = type_vois;
     constuction_distance(taille_solution, nom_fichier);
+    possede_distances = true;
     courant         = new solution(nv);
     courant->evaluer(les_distances);
 
@@ -41,14 +42,16 @@ rechercheTabou::~rechercheTabou()
     delete courant;
     for(int i=0; i<taille_solution; i++)
     {
-        delete list_tabou[i];
-        delete les_distances[i];
+        delete[] list_tabou[i];
+        if (possede_distances)
+            delete[] les_distances[i];
     }
     for(int i=0; i<duree_tabou; i++)
-        delete list_tabou2[i];
+        delete[] list_tabou2[i];
     delete[] list_tabou;
     delete[] list_tabou2;
-    delete[] les_distances;
+    if (possede_distances)
+        delete[] les_distances;
 }
 
 

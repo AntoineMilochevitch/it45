@@ -369,6 +369,7 @@ void Ae::appliquer_mutation_tabou(chromosome* chro, int **distances) {
     // Appliquer la recherche tabou (paramètres à ajuster selon besoin)
     rechercheTabou tabou(100, 10, chro->taille, nullptr, 1); // nbiter, duree_tabou, taille, distances, type_voisinage
     tabou.les_distances = distances; // Utiliser la même matrice de distances
+    tabou.possede_distances = false; // Indiquer que les distances sont fournies
     delete tabou.courant;
     tabou.courant = new solution(sol);
 

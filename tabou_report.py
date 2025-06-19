@@ -44,7 +44,8 @@ if "mode_arret" in df.columns:
             f"Paramètres : mode_arret={params['mode_arret']}, "
             f"nb_iteration={params['nb_iteration']}, "
             f"duree_tabou={params['duree_tabou']}, "
-            f"duree_seconde={params['duree_seconde']}"
+            f"duree_seconde={params['duree_seconde']}, "
+            f"type_voisinage={params['type_voisinage']}"
         )
         plt.figtext(0.5, 0.02, param_text, ha='center', fontsize=12, bbox={"facecolor":"#eee","pad":5,"edgecolor":"none"})
 
@@ -53,11 +54,13 @@ if "mode_arret" in df.columns:
         else:
             mode_str = f"iter{params['nb_iteration']}"
 
+        voisinage_str = f"vois{int(params['type_voisinage'])}"
+
         filename = (
             f"results/tabou_summary_{mode}_"
-            f"{mode_str}_tabou{params['duree_tabou']}.png"
+            f"{mode_str}_tabou{params['duree_tabou']}_{voisinage_str}.png"
         )
-
+        
         plt.savefig(filename, bbox_inches='tight')
         plt.show()
         plt.close()
