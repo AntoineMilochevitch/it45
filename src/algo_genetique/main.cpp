@@ -41,7 +41,7 @@ int main(int argc, char **argv)
 	// valeurs par defaut
 	int nb_generation     = 0;
 	int taille_population = 100;
-	float taux_croisement = 0.8;
+	float taux_croisement = 1.0;
 	float taux_mutation   = 0.2;
 	int taille_chromosome = 0;
 	char fileDistances[100];
