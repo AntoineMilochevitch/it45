@@ -17,6 +17,15 @@ double calculer_gap(int z, int z_optimal) {
     return (double)(z - z_optimal) / z_optimal;
 }
 
+const char* mutationTypeToString(MutationType type) {
+    switch(type) {
+        case MUTATION_SWAP: return "swap";
+        case MUTATION_OROPT: return "or-opt";
+        case MUTATION_TABOU: return "tabou";
+        default: return "inconnu";
+    }
+}
+
 std::map<std::string, int> solutionsOptimales = {
 	{"data/a280.tsp", 2579},
 	{"data/berlin52.tsp", 7542},
@@ -29,18 +38,11 @@ int main(int argc, char **argv)
 	//initialise le g�n�rateur de nombre al�atoire
 	Random::randomize();
 
-	// Ouvrir le fichier pour écrire les résultats
-    std::ofstream outputFile("results/algo_génétique.txt", std::ios::app);
-    if (!outputFile.is_open()) {
-        cerr << "Erreur : Impossible d'ouvrir le fichier algo_génétique.txt" << endl;
-        return 1;
-    }
-
 	// valeurs par defaut
-	int nb_generation     = 600;
+	int nb_generation     = 0;
 	int taille_population = 100;
 	float taux_croisement = 0.8;
-	float taux_mutation   = 0.5;
+	float taux_mutation   = 0.2;
 	int taille_chromosome = 0;
 	char fileDistances[100];
 	std::vector<std::string> instances = {
@@ -54,20 +56,30 @@ int main(int argc, char **argv)
     int duree_seconde = 60;
     cout << "Mode d'arret ? (1: nb generations, 2: temps) [defaut: 1] : ";
     cin >> mode_arret;
-    if (mode_arret == 2) {
-        cout << "Durée maximale (en secondes) ? [defaut: 60] : ";
-        cin >> duree_seconde;
-    }
+	if (mode_arret == 1) {
+		cout << "Nombre de générations ? [defaut: 1000] : ";
+		cin >> nb_generation;
+	} else if (mode_arret == 2) {
+		cout << "Durée maximale (en secondes) ? [defaut: 60] : ";
+		cin >> duree_seconde;
+	}
 
 
 	int choix_croisement = 1;
     bool utiliser_2opt = true;
+	int choix_mutation = 1;
+
     cout << "Quel croisement utiliser ? (1: 1X, 2: 2X, 3: LOX) [defaut: 1] : ";
     cin >> choix_croisement;
+	cout << "Quel opérateur de mutation ? (1: swap consécutif, 2: or-opt, 3: tabou) [defaut: 1] : ";
+	cin >> choix_mutation;
+	MutationType mutation_type = MUTATION_SWAP;
+	if (choix_mutation == 2) mutation_type = MUTATION_OROPT;
+	else if (choix_mutation == 3) mutation_type = MUTATION_TABOU;
     cout << "Utiliser 2-opt ? (1: oui, 0: non) [defaut: 1] : ";
     cin >> utiliser_2opt;
 
-    CroisementType croisement_type = CROISEMENT_2X;
+    CroisementType croisement_type = CROISEMENT_1X;
     if (choix_croisement == 2) croisement_type = CROISEMENT_2X;
     else if (choix_croisement == 3) croisement_type = CROISEMENT_LOX;
 	
@@ -105,45 +117,37 @@ int main(int argc, char **argv)
 
 		float gap = calculer_gap(best->fitness, solutionsOptimales[instance]);
 		cout << "Gap : " << gap * 100 << "%" << endl;
+
 	
 		cout << "----------------------------------------" << endl;
 
-		// Écriture dans le fichier uniquement à la fin de chaque instance
-        outputFile << "Instance : " << instance << endl;
-        outputFile << "Nombre de générations : " << nb_generation << endl;
-        outputFile << "Taille de la population : " << taille_population << endl;
-        outputFile << "Taux de croisement : " << taux_croisement << endl;
-        outputFile << "Taux de mutation : " << taux_mutation << endl;
-        outputFile << "La meilleure solution trouvee est : ";
-        best->afficher(outputFile); // Il faut surcharger afficher(std::ostream&) si ce n'est pas déjà fait
-        outputFile << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
-        outputFile << "Gap : " << gap * 100 << "%" << endl;
-        outputFile << "----------------------------------------" << endl;
-
 		// Écriture CSV pour Python
-
 		std::string croisement_str = (croisement_type == CROISEMENT_1X) ? "1x" :
                                      (croisement_type == CROISEMENT_2X) ? "2x" : "lox";
         std::string opt_str = utiliser_2opt ? "2opt" : "no2opt";
+		std::string mutation_str = mutationTypeToString(mutation_type);
 
         std::ofstream csvFile("results/algo_genetique_results.csv", std::ios::app);
-         if (csvFile.tellp() == 0) {
-               csvFile << "instance,mode_arret,nb_generation,taille_population,taux_croisement,taux_mutation,fitness,solution,temps,gap,croisement,2opt,duree_seconde,nb_generations_effectuees\n";
-        }
+        if (csvFile.tellp() == 0) {
+    		csvFile << "instance,mode_arret,nb_generation,taille_population,taux_croisement,taux_mutation,fitness,solution,temps,gap,croisement,2opt,mutation,duree_seconde,nb_generations_effectuees\n";
+		}
         csvFile << instance << ","
-                << (mode_arret == 1 ? "generation" : "temps") << ","
-                << nb_generation << ","
-                << taille_population << ","
-                << taux_croisement << ","
-                << taux_mutation << ","
-                << best->fitness << ",\"";
-        for (int i = 0; i < best->taille; ++i) {
-            csvFile << best->genes[i];
-            if (i < best->taille - 1) csvFile << "-";
-        }
-        csvFile << "\"," << elapsed.count() << "," << gap * 100 << ","
-                << croisement_str << "," << opt_str << ","
-                << duree_seconde << "," << nb_generations_effectuees << "\n";
+			<< (mode_arret == 1 ? "generation" : "temps") << ","
+			<< nb_generation << ","
+			<< taille_population << ","
+			<< taux_croisement << ","
+			<< taux_mutation << ","
+			<< best->fitness << ",\"";
+
+		for (int i = 0; i < best->taille; ++i) {
+			csvFile << best->genes[i];
+			if (i < best->taille - 1) csvFile << "-";
+		}
+		
+		csvFile << "\"," << elapsed.count() << "," << gap * 100 << ","
+			<< croisement_str << "," << opt_str << ","
+			<< mutation_str << ","
+			<< duree_seconde << "," << nb_generations_effectuees << "\n";
         csvFile.close();
 	}
 	return 0;

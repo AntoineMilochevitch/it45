@@ -6,6 +6,8 @@
 #include <iostream>
 #include "random.h"
 
+enum MutationType { MUTATION_SWAP, MUTATION_OROPT, MUTATION_TABOU };
+
 // La classe chromosome represente la structure d'une solution du probl�me
 class chromosome{
 public:
@@ -13,6 +15,7 @@ public:
 	int *genes;         // les g�nes du chromosome/solution
 	int taille;         // la taille du chromosome = nombre de g�nes
 	int fitness;        // la valeur de la fonction objectif (fitness) de la solution
+
 
 	// CONSTRUCTEURS
 	chromosome(int tc); // constructeur de l'objet al�atoirement
@@ -36,6 +39,7 @@ public:
     void echange_2_genes_quelconques(); // interchange al�atoirement 2 g�nes du chromosome
     void deplacement_1_gene();          // d�place un g�ne dans le chromosome
     void inversion_sequence_genes();    // inverse une s�quence de g�nes du chromosome
+    void or_opt(); // effectue un or-opt sur le chromosome
     void ameliorer_2opt(int **distance);
 };
 

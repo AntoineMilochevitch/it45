@@ -10,6 +10,7 @@ BIN_DIR = ../../bin
 # Sources et objets
 SOURCES = $(wildcard $(SRC_DIR)/*.cpp)
 OBJECTS = $(patsubst $(SRC_DIR)/%.cpp, $(BUILD_DIR)/%.o, $(SOURCES))
+TABOU_OBJ = ../../obj/algo_recherche_tabou/solution.o ../../obj/algo_recherche_tabou/rechercheTabou.o
 
 # Nom de l'exécutable
 TARGET = $(BIN_DIR)/genetique
@@ -18,7 +19,7 @@ TARGET = $(BIN_DIR)/genetique
 all: $(TARGET)
 
 # Construction de l'exécutable
-$(TARGET): $(OBJECTS)
+$(TARGET): $(OBJECTS) $(TABOU_OBJ)
 	@mkdir -p $(BIN_DIR)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 

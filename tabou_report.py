@@ -98,3 +98,6 @@ else:
     )
 
     plt.savefig(filename, bbox_inches='tight')
+
+with open("results/recherche_tabou_results.csv", "w") as f:
+    pass  # vide le fichier

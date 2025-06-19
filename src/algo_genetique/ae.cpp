@@ -5,7 +5,7 @@ using namespace std;
 
 // initialisation des param�tres de l'AG et g�n�ration de la population initiale
 Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier,
-       CroisementType croisement_type, bool utiliser_2opt, int mode_arret, int duree_seconde)
+       CroisementType croisement_type, bool utiliser_2opt, int mode_arret, int duree_seconde, MutationType mutation_type)
 {
     nbgenerations     = nbg;
     taille_pop        = tp;
@@ -16,6 +16,7 @@ Ae::Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_
     this->utiliser_2opt = utiliser_2opt;
     this->mode_arret = mode_arret;
     this->duree_seconde = duree_seconde;
+    this->mutation_type = mutation_type;
     constuction_distance(nom_fichier);
     pop   = new population(taille_pop, taille_chromosome);
 }
@@ -61,7 +62,6 @@ chromosome* Ae::optimiser(int& nb_generations_effectuees)
             std::chrono::duration<double> elapsed = now - start;
             if (elapsed.count() >= duree_seconde) break;
         }
-        // ...boucle d'évolution inchangée...
         pere1 = pop->selection_roulette();
         pere2 = pop->selection_roulette();
         if(Random::aleatoire(1000)/1000.0 < taux_croisement)
@@ -79,12 +79,22 @@ chromosome* Ae::optimiser(int& nb_generations_effectuees)
             fils2->copier(pere2);
         }
         if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
-            fils1->echange_2_genes_consecutifs();
+            if (mutation_type == MUTATION_SWAP)
+                fils1->echange_2_genes_consecutifs();
+            else if (mutation_type == MUTATION_OROPT)
+                fils1->or_opt();
+            else if (mutation_type == MUTATION_TABOU)
+                appliquer_mutation_tabou(fils1, les_distances);
             if (utiliser_2opt)
                 fils1->ameliorer_2opt(les_distances);
         }
         if (Random::aleatoire(1000) / 1000.0 < taux_mutation) {
-            fils2->echange_2_genes_consecutifs();
+            if (mutation_type == MUTATION_SWAP)
+                fils2->echange_2_genes_consecutifs();
+            else if (mutation_type == MUTATION_OROPT)
+                fils2->or_opt();
+            else if (mutation_type == MUTATION_TABOU)
+                appliquer_mutation_tabou(fils2, les_distances);
             if (utiliser_2opt)
                 fils2->ameliorer_2opt(les_distances);
         }
@@ -347,7 +357,28 @@ void Ae::constuction_distance(char* nom_fichier)
             cout << endl;
         }
     }
+}
 
-    
+void Ae::appliquer_mutation_tabou(chromosome* chro, int **distances) {
+    // Convertir chromosome en solution
+    solution sol(chro->taille);
+    for (int i = 0; i < chro->taille; ++i)
+        sol.ville[i] = chro->genes[i];
+    sol.evaluer(distances);
+
+    // Appliquer la recherche tabou (paramètres à ajuster selon besoin)
+    rechercheTabou tabou(100, 10, chro->taille, nullptr, 1); // nbiter, duree_tabou, taille, distances, type_voisinage
+    tabou.les_distances = distances; // Utiliser la même matrice de distances
+    delete tabou.courant;
+    tabou.courant = new solution(sol);
+
+    solution* best = tabou.optimiser();
+
+    // Copier la solution tabou dans le chromosome
+    for (int i = 0; i < chro->taille; ++i)
+        chro->genes[i] = best->ville[i];
+    chro->evaluer(distances);
+
+    delete best;
 }
 

@@ -22,7 +22,7 @@ if "mode_arret" in df.columns:
             ax.text(i, row["fitness"], f"Gap: {row['gap']:.2f}%", ha='center', va='bottom')
 
         # Colonnes du tableau selon le mode
-        table_cols = ["instance", "fitness", "gap", "temps"]
+        table_cols = ["instance", "fitness", "gap", "temps", "mutation"]
         if mode == "temps":
             table_cols += ["nb_generations_effectuees"]
         else:
@@ -45,7 +45,8 @@ if "mode_arret" in df.columns:
             f"nb_generation={params['nb_generation']}, "
             f"taille_population={params['taille_population']}, "
             f"taux_croisement={params['taux_croisement']}, "
-            f"taux_mutation={params['taux_mutation']}"
+            f"taux_mutation={params['taux_mutation']}, "
+            f"mutation={params['mutation']}"
         )
         plt.figtext(0.5, 0.02, param_text, ha='center', fontsize=12, bbox={"facecolor":"#eee","pad":5,"edgecolor":"none"})
 
@@ -58,7 +59,7 @@ if "mode_arret" in df.columns:
             f"results/genetique_summary_{mode}_"
             f"{mode_str}_pop{params['taille_population']}_"
             f"cross{params['taux_croisement']}_mut{params['taux_mutation']}_"
-            f"{params['croisement']}_{params['2opt']}.png"
+            f"{params['croisement']}_{params['2opt']}_{params['mutation']}.png"
         )
 
         plt.savefig(filename, bbox_inches='tight')
@@ -77,7 +78,7 @@ else:
     for i, row in df.iterrows():
         ax.text(i, row["fitness"], f"Gap: {row['gap']:.2f}%", ha='center', va='bottom')
 
-    table_data = df[["instance", "fitness", "gap", "temps"]]
+    table_data = df[["instance", "fitness", "gap", "temps", "mutation"]]
     plt.table(
         cellText=table_data.values,
         colLabels=table_data.columns,
@@ -92,7 +93,8 @@ else:
         f"Paramètres : nb_generation={params['nb_generation']}, "
         f"taille_population={params['taille_population']}, "
         f"taux_croisement={params['taux_croisement']}, "
-        f"taux_mutation={params['taux_mutation']}"
+        f"taux_mutation={params['taux_mutation']}, "
+        f"mutation={params['mutation']}"
     )
     plt.figtext(0.5, 0.02, param_text, ha='center', fontsize=12, bbox={"facecolor":"#eee","pad":5,"edgecolor":"none"})
 
@@ -100,8 +102,11 @@ else:
         f"results/genetique_summary_"
         f"gen{params['nb_generation']}_pop{params['taille_population']}_"
         f"cross{params['taux_croisement']}_mut{params['taux_mutation']}_"
-        f"{params['croisement']}_{params['2opt']}.png"
+        f"{params['croisement']}_{params['2opt']}_{params['mutation']}.png"
     )
 
     plt.savefig(filename, bbox_inches='tight')
     plt.show()
+
+with open("results/algo_genetique_results.csv", "w") as f:
+    pass

@@ -9,6 +9,7 @@
 #include <chrono>
 #include "population.h"
 #include "chromosome.h"
+#include "../algo_recherche_tabou/rechercheTabou.h" 
 
 using namespace std;
 // La classe Ae d�finie les param�tres d'une ex�cution d'un algorithme
@@ -29,11 +30,12 @@ public:
     bool utiliser_2opt;
 	int mode_arret;      // 1: nb generations, 2: temps
     int duree_seconde;   // durée max en secondes
+	MutationType mutation_type; 
 
 	// CONSTRUCTEURS
 	Ae(int nbg, int tp, double tcroisement, double tmutation, int tc, char* nom_fichier,
-       CroisementType croisement_type = CROISEMENT_2X, bool utiliser_2opt = true,
-       int mode_arret = 1, int duree_seconde = 60);
+   		CroisementType croisement_type = CROISEMENT_2X, bool utiliser_2opt = true,
+   		int mode_arret = 1, int duree_seconde = 60, MutationType mutation_type = MUTATION_SWAP);
                              // constructeur de l'objet Algaorithme evolutioniste
 	~Ae();                   // destructeur de l'objet Ae
 
@@ -52,6 +54,8 @@ public:
 	// op�rateur de croisement Linear Order LOX de deux chromosomes
     void croisementLOX(chromosome* parent1, chromosome* parent2,
                         chromosome* enfant_s1, chromosome* enfant_s2);
+
+	void appliquer_mutation_tabou(chromosome* chro, int **distances);
 };
 
 # endif

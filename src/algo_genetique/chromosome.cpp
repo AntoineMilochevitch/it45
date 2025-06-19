@@ -159,6 +159,27 @@ void chromosome::deplacement_1_gene()
     }
 }
 
+
+// Mutation or-opt : déplace un gène (hors 0) à une autre position (hors 0)
+void chromosome::or_opt() {
+    if (taille <= 3) return; // rien à faire
+    int from = Random::aleatoire(taille - 1) + 1; // [1, taille-1]
+    int to = Random::aleatoire(taille - 1) + 1;
+    while (to == from) to = Random::aleatoire(taille - 1) + 1;
+
+    int gene = genes[from];
+    if (from < to) {
+        for (int i = from; i < to; ++i)
+            genes[i] = genes[i + 1];
+        genes[to] = gene;
+    } else {
+        for (int i = from; i > to; --i)
+            genes[i] = genes[i - 1];
+        genes[to] = gene;
+    }
+    ordonner();
+}
+
 void chromosome::afficher() {
     afficher(std::cout);
 }
