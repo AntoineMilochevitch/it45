@@ -154,27 +154,28 @@ void TSP::littleAlgorithm(Matrix& m, double current_bound, int level, std::vecto
         m_incl[j0][i0] = INF;
 
         std::vector<int> path_incl = path;
+        path_incl.push_back(j0);
 
-        std::vector<int> temp_path = path;
-        temp_path.push_back(j0);
-
-        std::vector<bool> visited(size, false);
-        int current = temp_path[0];
-        int count = 0;
-        while (true) {
-            visited[current] = true;
-            ++count;
-            auto it = std::find(temp_path.begin(), temp_path.end(), current);
-            if (it == temp_path.end() || it + 1 == temp_path.end()) break;
-            current = *(it + 1);
-            if (visited[current]) break; // Détecte un cycle
+        // Construire le graphe des arcs sélectionnés
+        std::vector<int> succ(size, -1);
+        for (size_t i = 0; i + 1 < path_incl.size(); i += 2) {
+            int from = path_incl[i];
+            int to = path_incl[i + 1];
+            succ[from] = to;
         }
 
-        // Si on a formé un sous-cycle avant d’avoir visité toutes les villes
-        if (count < size && current == temp_path[0]) {
-            // Ne pas inclure (i0 -> j0) car cela créerait un sous-cycle
-        } else {
-            path_incl.push_back(j0);
+        // Détecter si on forme un cycle prématuré
+        std::vector<bool> visited(size, false);
+        int current = 0;
+        int count = 0;
+        while (current != -1 && !visited[current]) {
+            visited[current] = true;
+            current = succ[current];
+            ++count;
+        }
+        bool cycle_formed = (current == 0 && count < size);
+
+        if (!cycle_formed) {
             littleAlgorithm(m_incl, bound_incl, level + 1, path_incl, start_time, time_limit_seconds);
         }
     }
