@@ -8,7 +8,7 @@
 #include <tuple>
 #include <chrono>
 
-const int TIME_LIMIT_SECONDS = 40; //60, 600, 3600
+const int TIME_LIMIT_SECONDS = 60; //60, 600, 3600
 
 bool TSP::readCoordinates(const std::string& filename) {
     std::ifstream file(filename);
@@ -154,9 +154,29 @@ void TSP::littleAlgorithm(Matrix& m, double current_bound, int level, std::vecto
         m_incl[j0][i0] = INF;
 
         std::vector<int> path_incl = path;
-        path_incl.push_back(j0);
 
-        littleAlgorithm(m_incl, bound_incl, level + 1, path_incl, start_time, time_limit_seconds);
+        std::vector<int> temp_path = path;
+        temp_path.push_back(j0);
+
+        std::vector<bool> visited(size, false);
+        int current = temp_path[0];
+        int count = 0;
+        while (true) {
+            visited[current] = true;
+            ++count;
+            auto it = std::find(temp_path.begin(), temp_path.end(), current);
+            if (it == temp_path.end() || it + 1 == temp_path.end()) break;
+            current = *(it + 1);
+            if (visited[current]) break; // Détecte un cycle
+        }
+
+        // Si on a formé un sous-cycle avant d’avoir visité toutes les villes
+        if (count < size && current == temp_path[0]) {
+            // Ne pas inclure (i0 -> j0) car cela créerait un sous-cycle
+        } else {
+            path_incl.push_back(j0);
+            littleAlgorithm(m_incl, bound_incl, level + 1, path_incl, start_time, time_limit_seconds);
+        }
     }
 
     // Exclusion de l'arc (i0 -> j0)
@@ -171,13 +191,16 @@ void TSP::littleAlgorithm(Matrix& m, double current_bound, int level, std::vecto
 void TSP::buildSolution() {
     cost = 0;
     int current = 0;
-    for (int i = 0; i < size; ++i) {
+    for (int i = 0; i < size - 1; ++i) {
         int next = next_town[current];
         double dx = std::get<1>(coordinates[next]) - std::get<1>(coordinates[current]);
         double dy = std::get<2>(coordinates[next]) - std::get<2>(coordinates[current]);
         cost += static_cast<int>(std::round(std::sqrt(dx * dx + dy * dy)));
         current = next;
     }
+    double dx = std::get<1>(coordinates[0]) - std::get<1>(coordinates[current]);
+    double dy = std::get<2>(coordinates[0]) - std::get<2>(coordinates[current]);
+    cost += static_cast<int>(std::round(std::sqrt(dx * dx + dy * dy)));
 }
 
 int TSP::getCost() const {
@@ -223,6 +246,12 @@ std::pair<int, std::vector<int>> TSP::solve(const std::string& filename) {
         return {-1, {}};
     }
 
+     next_town.resize(size);
+    for (size_t i = 0; i < best_solution_path.size() - 1; ++i) {
+        int from = best_solution_path[i];
+        int to = best_solution_path[i + 1];
+        next_town[from] = to;
+    }
 
     // Calcul du coût
     cost = 0;
@@ -231,7 +260,7 @@ std::pair<int, std::vector<int>> TSP::solve(const std::string& filename) {
         int to = best_solution_path[i+1];
         double dx = std::get<1>(coordinates[to]) - std::get<1>(coordinates[from]);
         double dy = std::get<2>(coordinates[to]) - std::get<2>(coordinates[from]);
-        cost = static_cast<int>(best_bound_global);
+        cost += static_cast<int>(std::round(std::sqrt(dx * dx + dy * dy))); 
     }
 
     std::cout << "Solution trouvée de coût : " << cost << std::endl;
