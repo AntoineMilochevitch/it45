@@ -247,7 +247,7 @@ std::pair<int, std::vector<int>> TSP::solve(const std::string& filename) {
         return {-1, {}};
     }
 
-     next_town.resize(size);
+    next_town.resize(size);
     for (size_t i = 0; i < best_solution_path.size() - 1; ++i) {
         int from = best_solution_path[i];
         int to = best_solution_path[i + 1];

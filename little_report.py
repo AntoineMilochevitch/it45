@@ -37,3 +37,6 @@ if "temps_limite" in df.columns:
 # Enregistrement du graphe
 plt.savefig("results/little_summary.png", bbox_inches='tight')
 plt.show()
+
+with open("results/little_results.csv", "w") as f:
+    pass

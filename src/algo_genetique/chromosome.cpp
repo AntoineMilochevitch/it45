@@ -1,5 +1,5 @@
 #include "chromosome.h"
-#include <algorithm> // For std::reverse
+#include <algorithm>
 
 using namespace std;
 

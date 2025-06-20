@@ -26,6 +26,15 @@ const char* mutationTypeToString(MutationType type) {
     }
 }
 
+const char* croisementTypeToString(CroisementType type) {
+	switch(type) {
+		case CROISEMENT_1X: return "1X";
+		case CROISEMENT_2X: return "2X";
+		case CROISEMENT_LOX: return "LOX";
+		default: return "inconnu";
+	}
+}
+
 std::map<std::string, int> solutionsOptimales = {
 	{"data/a280.tsp", 2579},
 	{"data/berlin52.tsp", 7542},
@@ -41,7 +50,7 @@ int main(int argc, char **argv)
 	// valeurs par defaut
 	int nb_generation     = 0;
 	int taille_population = 100;
-	float taux_croisement = 1.0;
+	float taux_croisement = 0.8;
 	float taux_mutation   = 0.2;
 	int taille_chromosome = 0;
 	char fileDistances[100];
@@ -110,8 +119,8 @@ int main(int argc, char **argv)
 		cout << "Taux de croisement : " << taux_croisement << endl;
 		cout << "Taux de mutation : " << taux_mutation << endl;
 		
-		cout << "croisement 2x" << endl;
-		cout << "mutation : 2 gènes consectuif" << endl;
+		cout << "croisement : " << croisementTypeToString(croisement_type) << endl;
+		cout << "mutation : " << mutationTypeToString(mutation_type) << endl;
 		cout << "La meilleure solution trouvee est : ";
 		best->afficher(std::cout);
 		cout << "Temps d'execution : " << elapsed.count() << " secondes" << endl;
