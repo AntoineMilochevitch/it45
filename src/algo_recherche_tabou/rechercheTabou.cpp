@@ -240,26 +240,19 @@ void rechercheTabou::voisinage_2opt(int &best_i, int &best_j)
 }
 
 //proc�dure principale de la recherche
-solution* rechercheTabou::optimiser()
+solution* rechercheTabou::optimiser(int nb_iter)
 {
-    bool first            = true; // indique si c'est la premiere fois
-    //         que l'on est dans un mimium local
-    bool descente         = false;// indique si la solution courzntz corresponds � une descente
-    //int ameliore_solution = -1;   // indique l'iteration o� l'on a am�lior� la solution
-    int f_avant, f_apres;         // valeurs de la fitness avant et apr�s une it�ration
+    // On conserve la solution courante et la liste tabou entre les appels
+    static solution* best_solution = nullptr;
+    if (best_solution == nullptr) {
+        best_solution = new solution(taille_solution);
+        *best_solution = *courant;
+    }
 
-    // La meilleure solution trouv�e (= plus petit minium trouv�) � conserver
-    solution* best_solution = new solution(taille_solution);
+    int best_eval = best_solution->fitness;
 
-
-    int best_i    = 0;            // Le couple (best_i, best_j) repr�sente le meilleur mouvement non tabou
-    int best_j    = 0;
-    int best_eval = courant->fitness;
-    f_avant       = 10000000;
-
-    // Tant que le nombre d'it�rations limite n'est pas atteint
-    for(iter_courante=0; iter_courante<nbiterations; iter_courante++)
-    {
+    for (int k = 0; k < nb_iter; ++k, ++iter_courante) {
+        int best_i = 0, best_j = 0;
         if (type_voisinage == 1)
             voisinage_swap(best_i, best_j);
         else
@@ -270,52 +263,16 @@ solution* rechercheTabou::optimiser()
         else
             courant->reverse(best_i, best_j);
 
-        courant->ordonner();                        // On r�ordonne la solution en commen�ant par 0
-        courant->evaluer(les_distances);            // On �value la nouvelle solution courante
+        courant->ordonner();
+        courant->evaluer(les_distances);
 
-        f_apres = courant->fitness;                 // valeur de la fitness apres le mouvement
-
-        if(courant->fitness < best_eval)            // si on am�liore le plus petit minimum rencontr�
-        {                                           // alors on l'enregistre dans 'best_solution'
-            best_eval = courant->fitness;           // on mets � jour 'best_eval'
-            *best_solution = *courant ;         // on enregistre la solution courante comme best_solution
-            best_solution->evaluer(les_distances);  // on �value la best solution
-            //ameliore_solution = iter_courante;      // on indique que l'am�lioration � eu lieu � cette it�ration
-        }
-        else // Si on n'est pas dans le plus petit minimum rencontr� mais dans un minimum local
-        {
-            // Crit�res de d�tection d'un minimum local. 2 cas:
-            //  1. si la nouvelle solution est + mauvaise que l'ancienne
-            //         et que on est en train d'effectuer une descente
-            //  2. si la nouvelle solution est identique � l'ancienne
-            //         et que c'est la premi�re fois que cela se produit
-            if ( ((f_avant<f_apres)&&(descente==true)) || ((f_avant == f_apres)&&(first)) )
-            {
-
-                /*cout << "On est dans un minimum local a l'iteration "
-                    << iter_courante-1 << " -> min = " << f_avant
-                    << " km (le + petit min local deja trouve = "
-                    << best_eval << " km)" << endl;*/
-                first = false;
-            }
-
-            if (f_avant<=f_apres)  // la solution courante se d�grade
-                descente = false;
-            else
-                descente = true;   // la solution courante s'am�liore : descente
-
-            if ((f_avant!=f_apres)&&(!first)) //
-                first = true;
+        if (courant->fitness < best_eval) {
+            best_eval = courant->fitness;
+            *best_solution = *courant;
+            best_solution->evaluer(les_distances);
         }
 
-        // mise � jour de la liste tabou
-        list_tabou[best_i][best_j] = iter_courante+duree_tabou;
-        //mise_a_jour_liste_tabou_2(courant, position);
-        f_avant = f_apres;
-
-        // output: index of iteration and the optimal solution so far en C
-        //printf("%d\t%d\t%d\n", iter_courante, courant->fitness, best_eval);
+        list_tabou[best_i][best_j] = iter_courante + duree_tabou;
     }
-    best_solution->evaluer(les_distances);
-    return best_solution;
+    return new solution(*best_solution); // retourne une copie
 }

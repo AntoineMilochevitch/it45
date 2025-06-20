@@ -80,25 +80,28 @@ int main(int argc, char **argv)
             best = algo.optimiser();
             iterations_effectuees = nb_iteration;
         } else {
-            int iter = 0;
             auto t0 = chrono::high_resolution_clock::now();
-            rechercheTabou algo(nb_iteration, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()), type_voisinage);
-            solution* current_best = nullptr;
-            do {
-                solution* candidate = algo.optimiser();
-                if (!current_best || candidate->fitness < current_best->fitness) {
-                    if (current_best) delete current_best;
-                    current_best = candidate;
-                } else {
-                    delete candidate;
+            int total_iterations = 0;
+            int batch_size = 1000000000; // nombre d'itérations par appel (ajuste si besoin)
+            rechercheTabou algo(batch_size, duree_tabou, nb_villes, const_cast<char*>(instance.c_str()), type_voisinage);
+
+            solution* best = new solution(nb_villes);
+            *best = *(algo.courant); // commence avec la solution initiale
+
+            while (true) {
+                solution* candidate = algo.optimiser(batch_size); // fait batch_size itérations de plus
+                total_iterations += batch_size;
+                if (candidate->fitness < best->fitness) {
+                    *best = *candidate;
                 }
-                iter++;
+                delete candidate;
+
                 auto t1 = chrono::high_resolution_clock::now();
                 chrono::duration<double> elapsed = t1 - t0;
                 if (elapsed.count() >= duree_seconde) break;
-            } while (true);
-            best = current_best;
-            iterations_effectuees = iter;
+            }
+            iterations_effectuees = total_iterations;
+            // best contient la meilleure solution trouvée
         }
 
         auto end = chrono::high_resolution_clock::now();
