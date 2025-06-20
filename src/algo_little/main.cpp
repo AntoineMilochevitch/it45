@@ -13,10 +13,10 @@ double calculer_gap(int z, int z_optimal) {
 }
 
 std::map<std::string, int> solutionsOptimales = {
-    {"data/a280.tsp", 2579},
-    {"data/berlin52.tsp", 7542},
-    {"data/eil76.tsp", 538},
-    {"data/kroA100.tsp", 21282}
+	{"data/a280.tsp", 2579},
+	{"data/berlin52.tsp", 7542},
+	{"data/eil76.tsp", 538},
+	{"data/kroA100.tsp", 21282}
 };
 
 int main()
@@ -28,11 +28,11 @@ int main()
     }
 
     std::vector<std::string> instances = {
-        "data/a280.tsp",
-        "data/berlin52.tsp",
-        "data/eil76.tsp",
-        "data/kroA100.tsp"
-    };
+		"data/a280.tsp",
+		"data/berlin52.tsp",
+		"data/eil76.tsp",
+		"data/kroA100.tsp"
+	};
 
     for (const auto& instance : instances) {
         cout << "Instance : " << instance << endl;
