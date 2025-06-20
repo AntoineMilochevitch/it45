@@ -76,6 +76,7 @@ int main(int argc, char **argv)
 	MutationType mutation_type = MUTATION_SWAP;
 	if (choix_mutation == 2) mutation_type = MUTATION_OROPT;
 	else if (choix_mutation == 3) mutation_type = MUTATION_TABOU;
+	cout << mutationTypeToString(mutation_type) << endl;
     cout << "Utiliser 2-opt ? (1: oui, 0: non) [defaut: 1] : ";
     cin >> utiliser_2opt;
 

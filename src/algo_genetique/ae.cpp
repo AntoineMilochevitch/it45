@@ -342,7 +342,7 @@ void Ae::constuction_distance(char* nom_fichier)
     }
 
 	// afficher la matrice 
-    for (int i = 0; i < taille_chromosome; i++) {
+    /*for (int i = 0; i < taille_chromosome; i++) {
         for (int j = 0; j < taille_chromosome; j++) {
             cout << les_distances[i][j];
             if (j < taille_chromosome - 1)
@@ -356,7 +356,7 @@ void Ae::constuction_distance(char* nom_fichier)
             }
             cout << endl;
         }
-    }
+    }*/
 }
 
 void Ae::appliquer_mutation_tabou(chromosome* chro, int **distances) {

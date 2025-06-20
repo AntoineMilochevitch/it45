@@ -6,9 +6,8 @@ import seaborn as sns
 df = pd.read_csv("results/little_results.csv")
 df["gap"] = df["gap"].astype(float)
 
-# Affichage simple
 fig, ax = plt.subplots(figsize=(10, 6))
-sns.barplot(data=df, x="instance", y="fitness", ax=ax)
+sns.barplot(data=df, x="instance", y="cout", ax=ax)
 ax.set_title("Fitness par instance (Little)")
 ax.set_ylabel("Fitness (coût de la tournée)")
 ax.set_xlabel("Instances")
@@ -17,10 +16,10 @@ ax.tick_params(axis='x', pad=10)
 
 # Ajouter le texte des gaps sur les barres
 for i, row in df.iterrows():
-    ax.text(i, row["fitness"], f"Gap: {row['gap']:.2f}%", ha='center', va='bottom')
+    ax.text(i, row["cout"], f"Gap: {row['gap']:.2f}%", ha='center', va='bottom')
 
 # Tableau en dessous du graphe
-table_data = df[["instance", "fitness", "gap", "temps"]]
+table_data = df[["instance", "cout", "gap", "temps"]]
 plt.table(
     cellText=table_data.values,
     colLabels=table_data.columns,

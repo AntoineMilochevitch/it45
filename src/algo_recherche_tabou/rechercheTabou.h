@@ -37,7 +37,7 @@ class rechercheTabou{
         void voisinage_swap(int& best_i, int &best_j);   // donne le meilleur voisin non tabou
         void constuction_distance(int nv, char* nom_fichier);                
         void mise_a_jour_liste_tabou_2(solution* sol, int& position); // ajout de la solution 'sol' � la position 'position' de la liste tabou
-        solution* optimiser(int nb_iter);                       // lancement de la rechercheTabou
+        solution* optimiser();                           // lancement de la rechercheTabou
         void voisinage_2opt(int &best_i, int &best_j);
 };
 
